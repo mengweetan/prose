@@ -62,8 +62,9 @@ class DataGenerator(Sequence):
                 for t, word in enumerate(input_text):
                     
                     #_input[i, t] = params['input_token_index'][word]  # encoder input seq
-                    _input[i, t] = params['embedding_matrix'][word] # maybe??
-
+                    #_input[i, t] = params['embedding_matrix'][word] # maybe??
+                    _input[i, t] = word # just give it to them!
+                    
                 #_input[i, t+1:] = params['input_token_index']['']
                 for z, line_text in enumerate(target_text):
 
