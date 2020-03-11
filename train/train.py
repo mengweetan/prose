@@ -1,46 +1,22 @@
 import tensorflow as tf
-Sequence = tf.keras.utils.Sequence
 
 import numpy as np
 import pandas as pd
-import os
-from argparse import ArgumentParser
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
 
+Model = tf.keras.models.Model
+Input = tf.keras.layers.Input
+LSTM = tf.keras.layers.LSTM
+Embedding = tf.keras.layers.Embedding
+Dense = tf.keras.layers.Dense
+concatenate = tf.keras.layers.concatenate
+Flatten = tf.keras.layers.Flatten
+Add =  tf.keras.layers.Add
 
-parser = ArgumentParser()
-parser.add_argument("-i", "--in", dest="input",
-                    help="location of input dataset")
-parser.add_argument("-o", "--out",dest="output",
-                    help="location of model"
-                    )
+pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
+Tokenizer = tf.keras.preprocessing.text.Tokenizer
 
-dataset = parser.parse_args().input
-model_dir = parser.parse_args().output
+dataDir='../data/'
+HAIKU_LINES_NUM = 3
 
-sal = pd.read_csv(dataset,header=0, index_col=None)
-X = sal[['x']]
-y = sal['y']
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=10)
-
-lm = LinearRegression()
-lm.fit(X_train,y_train)
-
-print ('tensorflow ok...')
-print('THE Intercept :', round(lm.intercept_,2))
-print('Slope :', round(lm.coef_[0],2))
-
-from sklearn.metrics import mean_squared_error
-y_predict= lm.predict(X_test)
-mse = mean_squared_error(y_predict,y_test)
-print('MSE :', round(mse,2))
-
-from sklearn.externals import joblib
-
-if not os.path.exists(model_dir):
-    os.makedirs(model_dir)
-filename = model_dir+'/model.pkl'
-
-joblib.dump(lm, filename)
+df = pd.read_csv(dataDir+'__INPUT.txt', sep = '\t')
+df.info()
