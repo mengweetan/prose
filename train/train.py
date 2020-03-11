@@ -60,6 +60,7 @@ savetxt(dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
 '''
 
 embedding_matrix = np.loadtxt(open(dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
+print (embedding_matrix.shape)
 
 def _process_target_texts(text):
     if 'start__ ' not in text:
@@ -163,6 +164,7 @@ params ={
             'target_token_index':target_token_index,
             'reverse_target_char_index':reverse_target_char_index,
             'number_of_output':HAIKU_LINES_NUM,
+	    'embedding_matrix':embedding_matrix,
             #'latent_dim':latent_dim,
             #'num_syllabus':self.num_syllabus = len(syllabus)
         }
