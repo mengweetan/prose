@@ -60,5 +60,117 @@ savetxt(dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
 '''
 
 embedding_matrix = np.loadtxt(open(dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
-print (type(embedding_matrix))
-print (embedding_matrix.shape)
+
+def _process_target_texts(text):
+    if 'start__ ' not in text:
+        return 'start__ '+text+' __end'
+
+df.line1=df['line1'].apply(_process_target_texts)
+df.line2=df['line2'].apply(_process_target_texts)
+df.line3=df['line3'].apply(_process_target_texts)
+
+def _arrayOfInt(texts):
+    try:
+        array = texts.split(',')
+        array = [int(i) for i in array]
+    except:
+        print (texts)
+    return array
+
+df.lib = df['lib'].apply(_arrayOfInt)
+
+targetTexts = [df.line1, df.line2, df.line3 ]
+target_words = [ set(' '.join(item).split(' ')) for item in targetTexts ]
+
+num_encoder_tokens = vocab_size
+num_decoder_tokens = [len(i) for i in target_words ]
+
+for i in range(HAIKU_LINES_NUM):
+    num_decoder_tokens[i] += 1
+
+target_token_index = [dict( [(char, i+1) for i, char in enumerate(j)]) for j in target_words]
+reverse_target_char_index = [dict((i, word) for word, i in j.items()) for j in target_token_index ]
+
+max_encoder_seq_length = max_len
+max_decoder_seq_length = [ max ([len(column[i].split(' ')) for i in range(df.shape[0])]) for column in targetTexts]
+
+input_token_index = t.word_index
+reverse_input_char_index = dict(map(reversed, t.word_index.items()))
+
+y = np.array( targetTexts)
+y = y.transpose()
+X = (padded_docs , df.lib)
+
+epochs = 3
+latent_dim = 100
+dropout=0.1 #regularization , to prevent over fitting
+learning_rate = 0.005
+optimizer = 'rmsprop'
+lstm_dim =latent_dim
+
+inputs = Input(shape=(max_len,))
+
+x =  Embedding(num_encoder_tokens, latent_dim,  weights=[embedding_matrix], input_length=max_len, trainable=False, mask_zero = True)(inputs)
+_ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
+
+
+aux_inputs = [Input(shape=(None,), name='aux_input_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
+
+syllabus_inputs = [Input(shape=(1,), name='syllabus_input_{}'.format(i)) for i in range(HAIKU_LINES_NUM)] # assume training data has 12 types of lines
+
+
+syllabus_dense = []
+
+last_states_hs = []
+last_states_cs = []
+
+outputs = []
+
+for i in range(HAIKU_LINES_NUM):
+
+    syllabus_dense.append( Dense(latent_dim , activation='softmax')  (syllabus_inputs[i]) )
+    x = Embedding(num_decoder_tokens[i]+1, latent_dim, mask_zero = True, name='line{}'.format(i)) (aux_inputs[i])
+    if i == 0:
+        x, x_state_h, x_state_c = LSTM(lstm_dim , return_sequences=True,  return_state=True, name='lstm{}'.format(i)) \
+            (x,   initial_state=[Add()([state_h , syllabus_dense[i]]), Add()([state_c , syllabus_dense[i]])])
+
+        last_states_hs.append(x_state_h)
+        last_states_cs.append(x_state_c)
+
+    else:
+        x, x_state_h, x_state_c = LSTM(lstm_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
+            (x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([state_c , last_states_cs[i-1], syllabus_dense[i]])])
+
+        last_states_hs.append(x_state_h)
+        last_states_cs.append(x_state_c)
+
+
+    outputs.append(Dense(num_decoder_tokens[i], activation='softmax', name='predict{}'.format(i)) (x))
+
+#model = Model([inputs, tuple(np.array(aux_inputs).tolist()), tuple(np.array(syllabus_inputs).tolist())], [tuple(np.array(outputs).tolist())], name='machine')
+model = Model([inputs, aux_inputs[0],aux_inputs[1],aux_inputs[2], syllabus_inputs[0],syllabus_inputs[1],syllabus_inputs[2]], [outputs[0],outputs[1],outputs[2]], name='machine')
+
+model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+model.summary()
+
+params ={
+            'num_encoder_tokens':num_encoder_tokens,
+            'num_decoder_tokens':num_decoder_tokens,
+            'max_encoder_seq_length':max_encoder_seq_length,
+            'max_decoder_seq_length': max_decoder_seq_length,
+            'input_token_index':input_token_index,
+            'reverse_input_char_index':reverse_input_char_index,
+            'target_token_index':target_token_index,
+            'reverse_target_char_index':reverse_target_char_index,
+            'number_of_output':HAIKU_LINES_NUM,
+            #'latent_dim':latent_dim,
+            #'num_syllabus':self.num_syllabus = len(syllabus)
+        }
+
+import r
+DataGenerator = r.DataGenerator
+
+training_generator = DataGenerator(X, y, params, batch_size=16 )
+validation_generator = DataGenerator(X, y, params, batch_size=16)
+
+history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
