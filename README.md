@@ -1,6 +1,4 @@
-
-Demo of training and deploying a simple linear regression model built with Scikit-learn
-
+# Haiku emb
 Usage:
 
 ```
