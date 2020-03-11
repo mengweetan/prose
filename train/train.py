@@ -173,5 +173,6 @@ DataGenerator = r.DataGenerator
 training_generator = DataGenerator(X, y, params, batch_size=16 )
 validation_generator = DataGenerator(X, y, params, batch_size=16)
 
+print ('reached here?')
 history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, )
 #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
