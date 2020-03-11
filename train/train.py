@@ -30,6 +30,10 @@ encoded_docs = t.texts_to_sequences([df['input_texts'][i] for i in range(df.shap
 max_len = max([len(l) for l in encoded_docs]) # get the max len
 padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
 
+'''
+
+# do this locally!
+
 embeddings_index = dict()
 f = open(dataDir+'glove.6B/glove.6B.100d.txt') # try 100 dimension
 for line in f:
@@ -50,10 +54,11 @@ print (embedding_matrix)
 print (type(embedding_matrix))
 print (embedding_matrix.shape)
 
+
 from numpy import savetxt, loadtxt
 savetxt(dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
+'''
 
-
-embedding_matrix = numpy.loadtxt(open(dataDir+'embedding_matrix.csv', "rb"), delimiter=",", skiprows=1)
+embedding_matrix = np.loadtxt(open(dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
 print (type(embedding_matrix))
 print (embedding_matrix.shape)
