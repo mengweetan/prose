@@ -1,3 +1,6 @@
+import tensorflow as tf
+Sequence = tf.keras.utils.Sequence
+
 import numpy as np
 import pandas as pd
 import os
@@ -25,6 +28,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random
 lm = LinearRegression()
 lm.fit(X_train,y_train)
 
+print ('tensorflow ok...')
 print('THE Intercept :', round(lm.intercept_,2))
 print('Slope :', round(lm.coef_[0],2))
 
