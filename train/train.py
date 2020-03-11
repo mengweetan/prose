@@ -102,10 +102,10 @@ y = np.array( targetTexts)
 y = y.transpose()
 X = (padded_docs , df.lib)
 
-epochs = 3
+epochs = 10
 latent_dim = 100
 dropout=0.1 #regularization , to prevent over fitting
-learning_rate = 0.005
+learning_rate = 0.0025
 optimizer = 'rmsprop'
 lstm_dim =latent_dim
 
@@ -180,6 +180,8 @@ DataGenerator = r.DataGenerator
 training_generator = DataGenerator(X, y, params, batch_size=16 )
 validation_generator = DataGenerator(X, y, params, batch_size=16)
 
-print ('reached here?')
+
 history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, )
 #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+
+print (history.history)
