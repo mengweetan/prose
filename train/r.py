@@ -60,8 +60,8 @@ class DataGenerator(Sequence):
 
                 #for t, word in enumerate(input_text.split(' ')):
                 for t, word in enumerate(input_text):
-                    for item in word:
-                        _input[i, t] = params['input_token_index'][item]  # encoder input seq
+                    
+                    _input[i, t] = params['input_token_index'][word]  # encoder input seq
 
                 #_input[i, t+1:] = params['input_token_index']['']
                 for z, line_text in enumerate(target_text):
