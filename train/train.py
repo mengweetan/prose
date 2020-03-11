@@ -111,7 +111,12 @@ lstm_dim =latent_dim
 
 inputs = Input(shape=(max_len,))
 
-x =  Embedding(num_encoder_tokens, latent_dim,  weights=[embedding_matrix], input_length=max_len, trainable=False, mask_zero = True)(inputs)
+# from tensorflow.contrib.keras.api.keras.initializers import Constant
+# n = Embedding(2, 2, embeddings_initializer=Constant(m), input_length=1, name='embedding_matrix_1', trainable=False)
+
+Constant = tf.compat.v1.keras.initializers.Constant
+x =  Embedding(num_encoder_tokens, latent_dim,  embeddings_initializer=Constant(embedding_matrix), input_length=max_len, trainable=False, mask_zero = True)(inputs)
+# x =  Embedding(num_encoder_tokens, latent_dim,  weights=[embedding_matrix], input_length=max_len, trainable=False, mask_zero = True)(inputs)
 _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
 
 
