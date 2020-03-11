@@ -22,10 +22,10 @@ y = sal['y']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=10)
 
-lm = LinearRegression() 
-lm.fit(X_train,y_train) 
+lm = LinearRegression()
+lm.fit(X_train,y_train)
 
-print('Intercept :', round(lm.intercept_,2))
+print('THE Intercept :', round(lm.intercept_,2))
 print('Slope :', round(lm.coef_[0],2))
 
 from sklearn.metrics import mean_squared_error
