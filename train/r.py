@@ -29,8 +29,8 @@ class DataGenerator(Sequence):
 
         inputs, aux_inputs, outputs, syllabus_inputs = self._generate(self.X, self.y, self.params )
 
-        return [0,0,0,0,0,0,0],[0,0,0]
-        #return [inputs, aux_inputs[0],aux_inputs[1],aux_inputs[2], syllabus_inputs[0],syllabus_inputs[1],syllabus_inputs[2]], [outputs[0],outputs[1],outputs[2]]
+        #return [0,0,0,0,0,0,0],[0,0,0]
+        return [inputs, aux_inputs[0],aux_inputs[1],aux_inputs[2], syllabus_inputs[0],syllabus_inputs[1],syllabus_inputs[2]], [outputs[0],outputs[1],outputs[2]]
         #return [inputs, np.array(np.array(aux_inputs).tolist()), tuple(syllabus_inputs)], [np.array(np.array(outputs).tolist())]
         #return [inputs, tuple(np.array(aux_inputs).tolist())],[tuple(np.array(outputs).tolist())]
 

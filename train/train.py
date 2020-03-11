@@ -15,7 +15,7 @@ Add =  tf.keras.layers.Add
 pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
 Tokenizer = tf.keras.preprocessing.text.Tokenizer
 
-dataDir='../data/'
+dataDir='data/'
 HAIKU_LINES_NUM = 3
 
 df = pd.read_csv(dataDir+'__INPUT.txt', sep = '\t')
