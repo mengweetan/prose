@@ -38,7 +38,7 @@ HAIKU_LINES_NUM = 3
 df = pd.read_csv(dataDir+'__INPUT.txt', sep = '\t')
 df.info()
 
-df = df[:50000]
+df = df[:1000]
 t = Tokenizer()
 t.fit_on_texts([df['input_texts'][i] for i in range(df.shape[0])])
 vocab_size = len(t.word_index) + 1 # note - padded 1
