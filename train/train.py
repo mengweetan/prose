@@ -38,7 +38,7 @@ HAIKU_LINES_NUM = 3
 df = pd.read_csv(dataDir+'__INPUT.txt', sep = '\t')
 df.info()
 
-df = df[:10000]
+df = df[:50000]
 t = Tokenizer()
 t.fit_on_texts([df['input_texts'][i] for i in range(df.shape[0])])
 vocab_size = len(t.word_index) + 1 # note - padded 1
@@ -195,8 +195,8 @@ params ={
 import r
 DataGenerator = r.DataGenerator
 
-training_generator = DataGenerator(X, y, params, batch_size=16 )
-validation_generator = DataGenerator(X, y, params, batch_size=16)
+training_generator = DataGenerator(X, y, params, batch_size=256 )
+validation_generator = DataGenerator(X, y, params, batch_size=256)
 
 
 history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, )
@@ -206,3 +206,4 @@ modelDir = modelDir if modelDir else './model/haiku/'
 model.save(modelDir+'modelv2-1.h5')
 
 print (history.history)
+print ('model saved in {}'.format(modelDir))
