@@ -103,15 +103,15 @@ class lineMaker:
 
 
 
-'''
-t = Tokenizer()
-t.fit_on_texts([seed])
-t.word_index
+        '''
+        t = Tokenizer()
+        t.fit_on_texts([seed])
+        t.word_index
 
-encoded_docs = t.texts_to_sequences([seed])
-max_len = len(encoded_docs[0])
-padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
-'''
+        encoded_docs = t.texts_to_sequences([seed])
+        max_len = len(encoded_docs[0])
+        padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
+        '''
 
         from .utils import syllable_count
 
