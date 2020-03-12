@@ -69,10 +69,10 @@ class Machine:
             embeddings_index = dict()
             f = open(self.dataDir+'glove.6B/glove.6B.50d.txt') # try 50 dimension
             for line in f:
-        		values = line.split()
-        		word = values[0]
-        		coefs = np.asarray(values[1:], dtype='float32')
-        		embeddings_index[word] = coefs
+        	values = line.split()
+        	word = values[0]
+        	coefs = np.asarray(values[1:], dtype='float32')
+        	embeddings_index[word] = coefs
             f.close()
 
             embedding_matrix = np.zeros((vocab_size, 50)) # because we are using 50 dimension pre trained embedding
@@ -80,11 +80,8 @@ class Machine:
                 embedding_vector = embeddings_index.get(word)
                 if embedding_vector is not None:
                     embedding_matrix[i] = embedding_vector
-
-
-
-
-        	np.savetxt(self.dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
+		
+	    np.savetxt(self.dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
             print ('done building embedding matrix')
 
         embedding_matrix = np.loadtxt(open(self.dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
