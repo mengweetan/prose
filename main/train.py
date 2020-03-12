@@ -83,7 +83,7 @@ class Machine:
 
 
 
-        	
+
         	np.savetxt(self.dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
             print ('done building embedding matrix')
 
@@ -219,5 +219,5 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=3)
+    h = haiku.train(epochs=1)
     print (h.history)
