@@ -1,3 +1,4 @@
 data/glove*
 *.DS_Store*
 *.pyc*
+model/

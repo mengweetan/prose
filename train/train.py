@@ -15,13 +15,30 @@ Add =  tf.keras.layers.Add
 pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
 Tokenizer = tf.keras.preprocessing.text.Tokenizer
 
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+
+parser.add_argument("-o", "--out",dest="output",
+                    help="location of model"
+                    )
+
+parser.add_argument("-b", "--build",dest="build",
+                    help="build embedded matrix"
+                    )
+
+modelDir = parser.parse_args().output
+build_matrix = parser.parse_args().build
+
+
+
 dataDir='data/'
 HAIKU_LINES_NUM = 3
 
 df = pd.read_csv(dataDir+'__INPUT.txt', sep = '\t')
 df.info()
 
-df = df[:100]
+df = df[:10000]
 t = Tokenizer()
 t.fit_on_texts([df['input_texts'][i] for i in range(df.shape[0])])
 vocab_size = len(t.word_index) + 1 # note - padded 1
@@ -30,37 +47,37 @@ encoded_docs = t.texts_to_sequences([df['input_texts'][i] for i in range(df.shap
 max_len = max([len(l) for l in encoded_docs]) # get the max len
 padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
 
-'''
 
 # do this locally!
+if build_matrix:
 
-embeddings_index = dict()
-f = open(dataDir+'glove.6B/glove.6B.100d.txt') # try 100 dimension
-for line in f:
-	values = line.split()
-	word = values[0]
-	coefs = np.asarray(values[1:], dtype='float32')
-	embeddings_index[word] = coefs
-f.close()
-print('Loaded %s word vectors.' % len(embeddings_index))
+	embeddings_index = dict()
+	f = open(dataDir+'glove.6B/glove.6B.100d.txt') # try 100 dimension
+	for line in f:
+		values = line.split()
+		word = values[0]
+		coefs = np.asarray(values[1:], dtype='float32')
+		embeddings_index[word] = coefs
+	f.close()
+	print('Loaded %s word vectors.' % len(embeddings_index))
 
-embedding_matrix = np.zeros((vocab_size, 100)) # because we are using 100 dimension pre trained embedding
-for word, i in t.word_index.items():
-	embedding_vector = embeddings_index.get(word)
-	if embedding_vector is not None:
-		embedding_matrix[i] = embedding_vector
+	embedding_matrix = np.zeros((vocab_size, 100)) # because we are using 100 dimension pre trained embedding
+	for word, i in t.word_index.items():
+		embedding_vector = embeddings_index.get(word)
+		if embedding_vector is not None:
+			embedding_matrix[i] = embedding_vector
 
-print (embedding_matrix)
-print (type(embedding_matrix))
-print (embedding_matrix.shape)
+	print (embedding_matrix)
+	print (type(embedding_matrix))
+	print (embedding_matrix.shape)
 
 
-from numpy import savetxt, loadtxt
-savetxt(dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
-'''
+	from numpy import savetxt, loadtxt
+	savetxt(dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
+
 
 embedding_matrix = np.loadtxt(open(dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
-print (embedding_matrix.shape)
+
 
 def _process_target_texts(text):
     if 'start__ ' not in text:
@@ -102,7 +119,7 @@ y = np.array( targetTexts)
 y = y.transpose()
 X = (padded_docs , df.lib)
 
-epochs = 10
+epochs = 1
 latent_dim = 100
 dropout=0.1 #regularization , to prevent over fitting
 learning_rate = 0.0025
@@ -114,7 +131,8 @@ inputs = Input(shape=(max_len,))
 # from tensorflow.contrib.keras.api.keras.initializers import Constant
 # n = Embedding(2, 2, embeddings_initializer=Constant(m), input_length=1, name='embedding_matrix_1', trainable=False)
 
-Constant = tf.compat.v1.keras.initializers.Constant
+# Constant = tf.compat.v1.keras.initializers.Constant
+Constant = tf.keras.initializers.Constant
 x =  Embedding(num_encoder_tokens, latent_dim,  embeddings_initializer=Constant(embedding_matrix), input_length=max_len, trainable=False, mask_zero = True)(inputs)
 # x =  Embedding(num_encoder_tokens, latent_dim,  weights=[embedding_matrix], input_length=max_len, trainable=False, mask_zero = True)(inputs)
 _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
@@ -183,5 +201,8 @@ validation_generator = DataGenerator(X, y, params, batch_size=16)
 
 history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, )
 #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+
+modelDir = modelDir if modelDir else './model/haiku/'
+model.save(modelDir+'modelv2-1.h5')
 
 print (history.history)

@@ -3,7 +3,12 @@ Usage:
 
 ```
 pip install -r requirements.txt
-python train/train.py -i ./data/sal.csv -o ./model/salary
-python deploy/infer.py -m ./model/salary/model.pkl
+
+- build embedding matrix; add -b b
+python train/train.py -o ./model/haiku/ -b b
+- at paperspace
+python train/train.py -o /storage
+
+python deploy/infer.py -m ./model/haiku/model.pkl
 
 ```
