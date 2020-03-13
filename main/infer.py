@@ -22,7 +22,7 @@ import numpy as np
 
 
 
-from train import Machine
+from  train import Machine
 haiku = Machine()
 embedding_matrix = haiku.params['embedding_matrix']
 latent_dim = embedding_matrix.shape[1]
@@ -46,7 +46,7 @@ def getInferenceModels():
 
     '''
     load_model = tf.keras.models.load_model
-    model = load_model('model/haiku/modelv2-a.h5',custom_objects={'tf': tf}, compile=False)
+    model = load_model('model/haiku/modelv2-b.h5',custom_objects={'tf': tf}, compile=False)
     encoder_model = Model( [ model.inputs[0], model.inputs[4], model.inputs[5], model.inputs[6]], [model.layers[4].output[1],model.layers[4].output[2] ])
 
 
@@ -118,6 +118,17 @@ def getInferenceModels():
    
 
     return encoder_model, decoder_model
+
+
+
+    def work_on(seed):
+        from r import lineMaker
+
+        encoder_model, decoder_model = getInferenceModels()
+        lm = lineMaker( encoder_model, decoder_model, haiku.params )
+        result = lm.imagine(SEED_PHRASE)
+
+        return (result)
 
 if __name__ == "__main__":
 

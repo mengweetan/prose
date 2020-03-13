@@ -263,8 +263,8 @@ class lineMaker:
                     syllabus_count[j] += get_syllables(word)
 
                 syllabus_limit = 7 if j==1 else 5
-                if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
-                #if word == '__end': max_syllabus[j] = True
+                #if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
+                if word == '__end': max_syllabus[j] = True
                 else:
 
                     if j == 0:
