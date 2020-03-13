@@ -1,4 +1,4 @@
-# Haiku emb
+# Haiku project
 Usage:
 
 ```
