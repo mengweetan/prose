@@ -4,7 +4,8 @@ import string
 
 
 import tensorflow as tf
-
+pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
+Tokenizer = tf.keras.preprocessing.text.Tokenizer
 
 
 
@@ -101,19 +102,43 @@ class lineMaker:
 
     def imagine(self, seed, haiku_style=[5,7,5]):
 
+        from utils import get_syllables
 
+        _index =  self.params['reverse_input_char_index']
+        _index =  self.params['input_token_index']
 
+        #print (_index)
+
+        _ = []
+        seed_list = set(seed.split(' '))
+        for item in seed_list:
+            try:
+                _.append(_index[item])
+            except:
+                _.append(_index['unknown'])  # for now....
+        seed = _
+        print (seed)
+
+        t = Tokenizer()
         '''
         t = Tokenizer()
         t.fit_on_texts([seed])
         t.word_index
 
-        encoded_docs = t.texts_to_sequences([seed])
-        max_len = len(encoded_docs[0])
-        padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
+        for i in t.word_index:
+            print (i)
+            print (_index[i])
         '''
+        print (seed)
 
-        from .utils import syllable_count
+        #encoded_docs = t.texts_to_sequences([seed])
+        encoded_docs = [seed]
+        #max_len = len(encoded_docs[0])
+        #padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
+        padded_docs = pad_sequences(encoded_docs, maxlen=self.params['max_encoder_seq_length'], padding='post')
+        print (padded_docs)
+
+        
 
         def _sample(preds, temperature=0.3):
 
@@ -127,22 +152,33 @@ class lineMaker:
 
 
 
-        print (seed)
-        serialised = pd.Series([seed])
+
+        #serialised = pd.Series([seed])
+        #serialised = pd.Series(padded_docs)
+        serialised = padded_docs[0]
         haiku_style = np.array(haiku_style)
+        #print (serialised)
+        #print (serialised.shape)
 
-
-        X =np.array([serialised,haiku_style])
-
+        #X =np.array([serialised,haiku_style])
+        #print (X)
         #_haiku_style=[5,7,5]
 
-        d = DataGenerator(X, '', self.params,  batch_size=1)
+        # d = DataGenerator(X, '', self.params,  batch_size=1)
 
-        [s,_,_,_, s1,s2,s3], _ = d.__getitem__(0)
-
+        # [s,_,_,_, s1,s2,s3], _ = d.__getitem__(0)
+        #print ('s')
+        #print (s)
+        s = np.array(padded_docs)
 
 
         state_values =  self.encoder_model.predict([s, np.array([haiku_style[0]]), np.array([haiku_style[1]]), np.array([haiku_style[2]])]) # stndard 5-7-5 haiku!
+
+
+        # print (state_values) # ensure there is some output....
+
+
+
 
 
         ts = np.zeros((1,1))
@@ -151,6 +187,8 @@ class lineMaker:
         ts1[0,0] = (self.params['target_token_index'][1]['start__'])
         ts2 = np.zeros((1,1))
         ts2[0,0] = (self.params['target_token_index'][2]['start__'])
+
+
         '''
 
         ts = []
@@ -174,8 +212,10 @@ class lineMaker:
         while not stop_condition:
             r = ([ts,ts1,ts2] + state_values + [np.array([haiku_style[0]]), np.array([haiku_style[1]])  , np.array([haiku_style[2]])])
             #r = ([ts[0],ts[1],ts[2]] + state_values + [np.array([haiku_style[0]]), np.array([haiku_style[1]])  , np.array([haiku_style[2]])])
-            print ('ok...')
+
             i, ii, iii, h ,c = self.decoder_model.predict(r)
+            
+
             for j in range(3):
                 sampled_token_index = np.zeros((1,))
 
@@ -183,7 +223,7 @@ class lineMaker:
 
                     #print (self.params['reverse_target_char_index'][j][_index])
                     sampled_token_index = _sample(i[0, -1, :])
-
+                    
                     #sampled_token_index = np.argmax(i[0, -1, :])
                 elif j == 1:
                     #sampled_token_index  = np.argmax(ii[0, -1, :])
@@ -193,10 +233,10 @@ class lineMaker:
                     sampled_token_index = _sample(iii[0, -1, :])
 
                 word = (self.params['reverse_target_char_index'][j][sampled_token_index]).split('/')[0]
-
+                
                 if not max_syllabus[j] and word not in _haiku[j]:
                     _haiku[j].append(word)
-                    syllabus_count[j] += syllable_count(word)
+                    syllabus_count[j] += get_syllables(word)
 
                 syllabus_limit = 7 if j==1 else 5
                 if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True

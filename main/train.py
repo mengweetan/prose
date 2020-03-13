@@ -31,6 +31,12 @@ parser.add_argument("-b", "--build",
                     help="build embedded matrix"
                     )
 
+parser.add_argument("-p", "--phrase", dest="phrase",
+                help="text for seed"
+                )
+
+SEED_PHRASE = parser.parse_args().phrase
+
 class Machine:
     def __init__(self):
         self.HAIKU_LINES_NUM = 3

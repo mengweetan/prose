@@ -19,6 +19,9 @@ Tokenizer = tf.keras.preprocessing.text.Tokenizer
 import numpy as np
 
 
+
+
+
 from train import Machine
 haiku = Machine()
 embedding_matrix = haiku.params['embedding_matrix']
@@ -50,11 +53,16 @@ def getInferenceModels():
 
     #decoder model
 
-    inputs = Input(shape=(None,))
+    #inputs = Input(shape=(None,))
+    '''
+    inputs = Input(shape=(haiku.params['max_encoder_seq_length'], ), name='input_before_embed')
+    
     x =  Embedding(haiku.params['num_encoder_tokens'], latent_dim, mask_zero = True)(inputs)
     _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
+    '''
 
-    aux_inputs = [Input(shape=(haiku.params['max_encoder_seq_length'],), name='haikuLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
+    #aux_inputs = [Input(shape=(haiku.params['max_encoder_seq_length'],), name='haikuLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
+    aux_inputs = [Input(shape=(1,), name='proseLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
     syllabus_inputs = [Input(shape=(1,),  dtype='int32', name='syllabus_input_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
 
 
@@ -106,17 +114,24 @@ def getInferenceModels():
         #[decoder_outputs2[0] , decoder_outputs2[1] , decoder_outputs2[2]] + [state_h2, state_c2])
         [tuple(np.array(decoder_outputs2).tolist())] + [x_state_h, x_state_c]) # the last identity of the last line
     #decoder_model.load_weights(self.data_dir+'model8_weights.h5')
-    #decoder_model.summary()
-    return encoder_model, encoder_model
+    decoder_model.summary()
+   
+
+    return encoder_model, decoder_model
 
 if __name__ == "__main__":
+
+    from train import SEED_PHRASE 
+    print (SEED_PHRASE)
+
+
     from r import lineMaker
-    seed ='some random stuff'
+    #seed ="long john silver"
 
 
 
     encoder_model, decoder_model = getInferenceModels()
     lm = lineMaker( encoder_model, decoder_model, haiku.params )
-    result = lm.imagine(seed)
+    result = lm.imagine(SEED_PHRASE)
 
     print (result)
