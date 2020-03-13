@@ -40,7 +40,7 @@ def getInferenceModels():
 
     '''
     load_model = tf.keras.models.load_model
-    model = load_model('./model/haiku/modelv2-3.h5',custom_objects={'tf': tf}, compile=False)
+    model = load_model('model/haiku/modelv2-a.h5',custom_objects={'tf': tf}, compile=False)
     encoder_model = Model( [ model.inputs[0], model.inputs[4], model.inputs[5], model.inputs[6]], [model.layers[4].output[1],model.layers[4].output[2] ])
 
 
@@ -80,13 +80,13 @@ def getInferenceModels():
         if i == 0:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True, name='lstm{}'.format(i)) \
                 (x,   initial_state=[Add()([state_h , syllabus_dense[i]]), Add()([state_c , syllabus_dense[i]])])
-                
+
             last_states_hs.append(x_state_h); last_states_cs.append(x_state_c)
 
         else:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
                 (x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([state_c , last_states_cs[i-1], syllabus_dense[i]])])
-              
+
             last_states_hs.append(x_state_h); last_states_cs.append(x_state_c)
 
         decoder_outputs2.append(Dense(haiku.params['num_decoder_tokens'][i], activation='softmax', name='predict{}'.format(i)) (x))

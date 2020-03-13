@@ -2,13 +2,13 @@
 Usage:
 
 ```
-pip install -r requirements.txt
 
-- build embedding matrix; add -b b
-python train/train.py -o ./model/haiku/ -b b
-- at paperspace
-python train/train.py -o /storage
+- local; build embedding matrix;
+python main/train.py -o ./model/haiku/ -b matrix
 
-python deploy/infer.py -m ./model/haiku/model.pkl
+- paperspace
+python main/train.py -o /artifacts
+
+# python deploy/infer.py -m ./model/haiku/model.pkl
 
 ```
