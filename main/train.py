@@ -57,7 +57,7 @@ class Machine:
 
     def _setup(self):
 
-        #self.df = self.df[:10000]
+        self.df = self.df[:5000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -71,7 +71,8 @@ class Machine:
         if self.build_matrix:
 
             embeddings_index = dict()
-            f = open(self.dataDir+'glove.6B/glove.6B.50d.txt',  encoding='utf-8') # try 50 dimension
+            if os.name == 'nt': f = open(self.dataDir+'glove.6B/glove.6B.50d.txt',  encoding='utf-8') # try 50 dimension
+            else: f = open(self.dataDir+'glove.6B/glove.6B.50d.txt')
             for line in f:
         	    values = line.split()
         	    word = values[0]
@@ -211,19 +212,19 @@ class Machine:
         training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
         validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
 
-        self.modelDir = self.modelDir if self.modelDir else './model/haiku/'
+        self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
             os.makedirs(self.modelDir)
 
-        mc = ModelCheckpoint(self.modelDir+'best_model.h5')
+        mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5')
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
 
-        #history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es] )
-        history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+        history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es] )
+        #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
 
-        model.save(self.modelDir+'modelv2-A.h5')
+        model.save(self.modelDir+'/modelv2-a.h5')
         print ('saved model in {}'.format(self.modelDir))
         #model.save_weights(modelDir+'modelv2_weights.h5')
 
