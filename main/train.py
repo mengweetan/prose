@@ -159,7 +159,9 @@ class Machine:
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
 
         if python_version == 2: optimizer = 'rmsprop'
-        else: optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
+        else: 
+		#optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
+		optimizer =  tf.keras.optimizers.Adagrad()
 
         # Model Architecture
 
@@ -215,14 +217,14 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=32 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=32)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
             os.makedirs(self.modelDir)
 
-        mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5')
+        mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5',monitor='val_loss', mode='min', verbose=1)
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
         
@@ -240,5 +242,5 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=6)
+    h = haiku.train(epochs=10)
     print (h.history)
