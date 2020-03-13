@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 import tensorflow as tf
 
 Model = tf.keras.models.Model
@@ -46,18 +49,18 @@ def getInferenceModels():
 
 
     #decoder model
+
     inputs = Input(shape=(None,))
+    x =  Embedding(haiku.params['num_encoder_tokens'], latent_dim, mask_zero = True)(inputs)
+    _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
+
     aux_inputs = [Input(shape=(haiku.params['max_encoder_seq_length'],), name='haikuLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
     syllabus_inputs = [Input(shape=(1,),  dtype='int32', name='syllabus_input_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
 
-    x =  Embedding(haiku.params['num_encoder_tokens'], latent_dim, mask_zero = True)(inputs)
-    _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
 
     decoder_state_input_h = Input(shape=(latent_dim,))
     decoder_state_input_c = Input(shape=(latent_dim,))
     decoder_states_inputs = [decoder_state_input_h, decoder_state_input_c]
-
-
 
     syllabus_state_hs = []
     syllabus_state_cs = []
@@ -71,23 +74,29 @@ def getInferenceModels():
 
     for i in range(HAIKU_LINES_NUM):
 
+        
+        x2 = Embedding(haiku.params['num_decoder_tokens'][i]+1, latent_dim,  name='syllabus{}'.format(i)) (syllabus_inputs[i]) 
+        #x2 = Embedding(haiku.params['num_decoder_tokens'][i]+1, latent_dim, mask_zero = True, name='line{}'.format(i)) (syllabus_inputs[i]) 
+        x2, s_state_h, s_state_c =  LSTM(latent_dim, return_sequences=True, return_state=True, name='lstm_post_line_emb{}'.format(i)) (x2)
+        syllabus_state_hs.append(s_state_h)
+        syllabus_state_cs.append(s_state_c)
+
         syllabus_dense.append( Dense(latent_dim , activation='softmax')  (syllabus_inputs[i]) )
 
         x = Embedding(haiku.params['num_decoder_tokens'][i]+1, latent_dim, mask_zero = True, name='line{}'.format(i)) (aux_inputs[i])
-        x, s_state_h, s_state_c =  LSTM(latent_dim, return_sequences=True, return_state=True, name='lstm_post_line_emb{}'.format(i)) (x, initial_state=decoder_states_inputs)
-        syllabus_state_hs.append(s_state_h); syllabus_state_cs.append(s_state_c)
-
         if i == 0:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True, name='lstm{}'.format(i)) \
-                (x,   initial_state=[Add()([state_h , syllabus_dense[i]]), Add()([state_c , syllabus_dense[i]])])
+                (x,   initial_state=[Add()([decoder_state_input_h , syllabus_dense[i]]), Add()([decoder_state_input_c , syllabus_dense[i]])])
 
-            last_states_hs.append(x_state_h); last_states_cs.append(x_state_c)
+            last_states_hs.append(x_state_h)
+            last_states_cs.append(x_state_c)
 
         else:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
-                (x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([state_c , last_states_cs[i-1], syllabus_dense[i]])])
+                (x,   initial_state=[Add()([decoder_state_input_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([decoder_state_input_c , last_states_cs[i-1], syllabus_dense[i]])])
 
-            last_states_hs.append(x_state_h); last_states_cs.append(x_state_c)
+            last_states_hs.append(x_state_h)
+            last_states_cs.append(x_state_c)
 
         decoder_outputs2.append(Dense(haiku.params['num_decoder_tokens'][i], activation='softmax', name='predict{}'.format(i)) (x))
 
@@ -95,7 +104,7 @@ def getInferenceModels():
     decoder_model = Model(
         [aux_inputs] + decoder_states_inputs + [syllabus_inputs],
         #[decoder_outputs2[0] , decoder_outputs2[1] , decoder_outputs2[2]] + [state_h2, state_c2])
-        [tuple(np.array(decoder_outputs2).tolist())] + [state_h2, state_c2])
+        [tuple(np.array(decoder_outputs2).tolist())] + [x_state_h, x_state_c]) # the last identity of the last line
     #decoder_model.load_weights(self.data_dir+'model8_weights.h5')
     #decoder_model.summary()
     return encoder_model, encoder_model
