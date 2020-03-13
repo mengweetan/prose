@@ -1,4 +1,5 @@
 import tensorflow as tf
+
 Model = tf.keras.models.Model
 Input = tf.keras.layers.Input
 LSTM = tf.keras.layers.LSTM
@@ -11,6 +12,8 @@ Constant = tf.keras.initializers.Constant
 
 pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
 Tokenizer = tf.keras.preprocessing.text.Tokenizer
+
+import numpy as np
 
 
 from train import Machine
@@ -41,7 +44,14 @@ def getInferenceModels():
     encoder_model = Model( [ model.inputs[0], model.inputs[4], model.inputs[5], model.inputs[6]], [model.layers[4].output[1],model.layers[4].output[2] ])
 
 
+
     #decoder model
+    inputs = Input(shape=(None,))
+    aux_inputs = [Input(shape=(haiku.params['max_encoder_seq_length'],), name='haikuLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
+    syllabus_inputs = [Input(shape=(1,),  dtype='int32', name='syllabus_input_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
+
+    x =  Embedding(haiku.params['num_encoder_tokens'], latent_dim, mask_zero = True)(inputs)
+    _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
 
     decoder_state_input_h = Input(shape=(latent_dim,))
     decoder_state_input_c = Input(shape=(latent_dim,))
@@ -64,31 +74,22 @@ def getInferenceModels():
         syllabus_dense.append( Dense(latent_dim , activation='softmax')  (syllabus_inputs[i]) )
 
         x = Embedding(haiku.params['num_decoder_tokens'][i]+1, latent_dim, mask_zero = True, name='line{}'.format(i)) (aux_inputs[i])
+        x, s_state_h, s_state_c =  LSTM(latent_dim, return_sequences=True, return_state=True, name='lstm_post_line_emb{}'.format(i)) (x, initial_state=decoder_states_inputs)
+        syllabus_state_hs.append(s_state_h); syllabus_state_cs.append(s_state_c)
+
         if i == 0:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True, name='lstm{}'.format(i)) \
                 (x,   initial_state=[Add()([state_h , syllabus_dense[i]]), Add()([state_c , syllabus_dense[i]])])
-                #(x,   initial_state=[Add()([state_h , syllabus_state_hs[i]]), Add()([state_c , syllabus_state_cs[i]])])
-
-
-            #x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True, name='lstm{}'.format(i)) (x,   initial_state=[Add([state_h , syllabus_state_hs[i]]), Add([state_c , syllabus_state_cs[i]])])
-
-            last_states_hs.append(x_state_h)
-            last_states_cs.append(x_state_c)
+                
+            last_states_hs.append(x_state_h); last_states_cs.append(x_state_c)
 
         else:
-            #x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) (x,   initial_state=[state_h + last_states_hs[i-1]+syllabus_state_hs[i], state_c + last_states_cs[i-1]+syllabus_state_cs[i]])
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
                 (x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([state_c , last_states_cs[i-1], syllabus_dense[i]])])
-                #(x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_state_hs[i]]), Add()([state_c , last_states_cs[i-1], syllabus_state_cs[i]])])
+              
+            last_states_hs.append(x_state_h); last_states_cs.append(x_state_c)
 
-            last_states_hs.append(x_state_h)
-            last_states_cs.append(x_state_c)
-
-
-        #print (x.shape)
         decoder_outputs2.append(Dense(haiku.params['num_decoder_tokens'][i], activation='softmax', name='predict{}'.format(i)) (x))
-
-
 
 
     decoder_model = Model(

@@ -53,7 +53,7 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:5000]
+        self.df = self.df[:10000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -67,7 +67,7 @@ class Machine:
         if self.build_matrix:
 
             embeddings_index = dict()
-            f = open(self.dataDir+'glove.6B/glove.6B.50d.txt') # try 50 dimension
+            f = open(self.dataDir+'glove.6B/glove.6B.50d.txt',  encoding='utf-8') # try 50 dimension
             for line in f:
         	    values = line.split()
         	    word = values[0]
@@ -75,7 +75,8 @@ class Machine:
         	    embeddings_index[word] = coefs
             f.close()
 
-            embedding_matrix = np.zeros((vocab_size, 50)) # because we are using 50 dimension pre trained embedding
+            dimension_of_matrix =len(values)-1
+            embedding_matrix = np.zeros((vocab_size, dimension_of_matrix)) # because we are using 50 dimension pre trained embedding
             for word, i in t.word_index.items():
                 embedding_vector = embeddings_index.get(word)
                 if embedding_vector is not None:
@@ -84,7 +85,7 @@ class Machine:
             np.savetxt(self.dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
             print ('done building embedding matrix')
 
-        embedding_matrix = np.loadtxt(open(self.dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
+        else: embedding_matrix = np.loadtxt(open(self.dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
 
 
 
@@ -132,6 +133,8 @@ class Machine:
                         #'num_syllabus':self.num_syllabus = len(syllabus)
             }
 
+        
+
 
     def train(self, epochs=5):
 
@@ -148,10 +151,14 @@ class Machine:
         else: optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
 
         # Model Architecture
+
+        print (self.params['max_encoder_seq_length'])
+        print (self.params['num_encoder_tokens'])
+
+
         inputs = Input(shape=(self.params['max_encoder_seq_length'],))
 
-        x =  Embedding(self.params['num_encoder_tokens']+1, latent_dim,  embeddings_initializer=Constant(self.params['embedding_matrix']), \
-        input_length=self.params['max_encoder_seq_length'], trainable=False, mask_zero = True)(inputs)
+        x =  Embedding(self.params['num_encoder_tokens'], latent_dim,  embeddings_initializer=Constant(self.params['embedding_matrix']), input_length=self.params['max_encoder_seq_length'], trainable=False, mask_zero = True)(inputs)
 
         _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
 
@@ -201,8 +208,8 @@ class Machine:
         validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
 
 
-        #history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, )
-        history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+        history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, )
+        #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
         self.modelDir = self.modelDir if self.modelDir else './model/haiku/'
         if not os.path.exists(self.modelDir):
@@ -216,5 +223,5 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=1)
+    h = haiku.train(epochs=2)
     print (h.history)
