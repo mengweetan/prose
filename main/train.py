@@ -159,9 +159,9 @@ class Machine:
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
 
         if python_version == 2: optimizer = 'rmsprop'
-        else: 
-		#optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
-		optimizer =  tf.keras.optimizers.Adagrad()
+        else: optimizer =  tf.keras.optimizers.Adagrad()
+	#optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
+		
 
         # Model Architecture
 
