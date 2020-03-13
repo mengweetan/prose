@@ -12,6 +12,10 @@ concatenate = tf.keras.layers.concatenate
 Flatten = tf.keras.layers.Flatten
 Add =  tf.keras.layers.Add
 Constant = tf.keras.initializers.Constant
+
+EarlyStopping = tf.keras.callbacks.EarlyStopping
+ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint
+
 pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
 Tokenizer = tf.keras.preprocessing.text.Tokenizer
 
@@ -53,7 +57,7 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:10000]
+        #self.df = self.df[:10000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -207,14 +211,19 @@ class Machine:
         training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
         validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
 
-
-        history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, )
-        #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
-
         self.modelDir = self.modelDir if self.modelDir else './model/haiku/'
         if not os.path.exists(self.modelDir):
             os.makedirs(self.modelDir)
-        model.save(self.modelDir+'modelv2-3.h5')
+
+        mc = ModelCheckpoint(self.modelDir+'best_model.h5')
+        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
+
+
+        # history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es] )
+        #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+
+
+        # model.save(self.modelDir+'modelv2-3.h5')
         #model.save_weights(modelDir+'modelv2_weights.h5')
 
 
