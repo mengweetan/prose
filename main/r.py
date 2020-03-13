@@ -103,21 +103,57 @@ class lineMaker:
     def imagine(self, seed, haiku_style=[5,7,5]):
 
         from utils import get_syllables
+        from scipy import spatial
+        embeddings_index = dict()
+        f = open('data/'+'/glove.6B/glove.6B.50d.txt') 
+        for line in f:
+            values = line.split()
+            word = values[0]
+            coefs = np.asarray(values[1:], dtype='float32')
+            embeddings_index[word] = coefs
+        f.close()
 
-        _index =  self.params['reverse_input_char_index']
+
+        def _index_from_vocab(word):
+
+            def __find_closest_embeddings(embedding):
+                return sorted(embeddings_index.keys(), key=lambda word: spatial.distance.euclidean(embeddings_index[word], embedding))
+
+            try: words = __find_closest_embeddings(embeddings_index[word])[1:]
+            except: return _index['unknown']  # becuase we know unknown is aleady there la....
+            for w in words:
+                try: return _index[w] # try returnin the closet word and hope our vocab has that word
+                except: 
+                    print (word, w)
+                    #return _index['unknown']
+            
+            
+            return _index[word]
+
+
+        #_index =  self.params['reverse_input_char_index']
         _index =  self.params['input_token_index']
 
         #print (_index)
 
+        from nltk.corpus import stopwords
+        _stopwords = set(stopwords.words('english'))
+
         _ = []
         seed_list = set(seed.split(' '))
+
         for item in seed_list:
-            try:
-                _.append(_index[item])
-            except:
-                _.append(_index['unknown'])  # for now....
+            if type(item) is str: item = item.lower()
+            if not item in _stopwords:
+                try:
+                    _.append(_index[item])
+                except Exception as e:
+                    print (e)
+                    _.append(_index_from_vocab(item))
+                    # routine here to get the nearest word from glove dict....
+                    # _.append(_index['unknown'])  # for now....
         seed = _
-        print (seed)
+        
 
         t = Tokenizer()
         '''
@@ -129,18 +165,18 @@ class lineMaker:
             print (i)
             print (_index[i])
         '''
-        print (seed)
+        print (self.params['max_encoder_seq_length'])
 
         #encoded_docs = t.texts_to_sequences([seed])
         encoded_docs = [seed]
         #max_len = len(encoded_docs[0])
         #padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
         padded_docs = pad_sequences(encoded_docs, maxlen=self.params['max_encoder_seq_length'], padding='post')
-        print (padded_docs)
+        
 
         
 
-        def _sample(preds, temperature=0.3):
+        def _sample(preds, temperature=0.5):
 
             preds = np.asarray(preds).astype('float64')
             preds = np.log(preds) / temperature # 1 is temperature
@@ -150,25 +186,13 @@ class lineMaker:
             return np.argmax(probas)
 
 
-
-
-
-        #serialised = pd.Series([seed])
-        #serialised = pd.Series(padded_docs)
         serialised = padded_docs[0]
         haiku_style = np.array(haiku_style)
-        #print (serialised)
-        #print (serialised.shape)
-
-        #X =np.array([serialised,haiku_style])
-        #print (X)
+      
         #_haiku_style=[5,7,5]
-
         # d = DataGenerator(X, '', self.params,  batch_size=1)
-
         # [s,_,_,_, s1,s2,s3], _ = d.__getitem__(0)
-        #print ('s')
-        #print (s)
+   
         s = np.array(padded_docs)
 
 

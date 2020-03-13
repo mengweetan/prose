@@ -63,7 +63,7 @@ class Machine:
 
     def _setup(self):
 
-        #self.df = self.df[:5000]
+        self.df = self.df[:10000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -153,7 +153,7 @@ class Machine:
 
         latent_dim = self.params['embedding_matrix'].shape[1]
         dropout=0.1 #regularization , to prevent over fitting
-        learning_rate = 0.0025
+        learning_rate = 0.005
 
         import sys, os
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
@@ -163,8 +163,8 @@ class Machine:
 
         # Model Architecture
 
-        print (self.params['max_encoder_seq_length'])
-        print (self.params['num_encoder_tokens'])
+        print ('max_encoder_seq_length', self.params['max_encoder_seq_length'])
+        print ('num_encoder_tokens', self.params['num_encoder_tokens'])
 
 
         inputs = Input(shape=(self.params['max_encoder_seq_length'],))
@@ -225,8 +225,8 @@ class Machine:
         mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5')
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
-
-        history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es] )
+        
+        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
         #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
 
@@ -240,5 +240,5 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=10)
+    h = haiku.train(epochs=6)
     print (h.history)
