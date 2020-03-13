@@ -85,7 +85,7 @@ class Machine:
                 embedding_vector = embeddings_index.get(word)
                 if embedding_vector is not None:
                     embedding_matrix[i] = embedding_vector
-                    
+
             np.savetxt(self.dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
             print ('done building embedding matrix')
 
@@ -137,7 +137,7 @@ class Machine:
                         #'num_syllabus':self.num_syllabus = len(syllabus)
             }
 
-        
+
 
 
     def train(self, epochs=5):
@@ -219,11 +219,12 @@ class Machine:
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
 
-        # history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es] )
-        #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+        #history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es] )
+        history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
 
-        # model.save(self.modelDir+'modelv2-3.h5')
+        model.save(self.modelDir+'modelv2-A.h5')
+        print ('saved model in {}'.format(self.modelDir))
         #model.save_weights(modelDir+'modelv2_weights.h5')
 
 
@@ -232,5 +233,5 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=2)
+    h = haiku.train(epochs=1)
     print (h.history)
