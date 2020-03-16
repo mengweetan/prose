@@ -306,18 +306,18 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=16 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=16)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
             os.makedirs(self.modelDir)
 
-        mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5',monitor='val_loss', mode='min', verbose=1)
+        mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
         
-        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
+        #history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
         
         #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
@@ -332,5 +332,5 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=2)
+    h = haiku.train(epochs=10)
     print (h.history)
