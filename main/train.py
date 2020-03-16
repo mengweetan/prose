@@ -63,13 +63,22 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:40000]
+        #self.df = self.df[:10000]
         print (self.df.info())
 
         t = Tokenizer()
         t.fit_on_texts([self.df['input_texts'][i] for i in range(self.df.shape[0])])
+        
+        print (len(t.word_index) )
+        t.word_index['__unknown'] = len(t.word_index) + 1 
+        vocab_size = len(t.word_index)
+        print (vocab_size )
+        
         vocab_size = len(t.word_index) + 1 # note - padded 1
 
+
+
+        
         encoded_docs = t.texts_to_sequences([self.df['input_texts'][i] for i in range(self.df.shape[0])])
         max_len = max([len(l) for l in encoded_docs]) # get the max len
         padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
@@ -93,10 +102,10 @@ class Machine:
                 if embedding_vector is not None:
                     embedding_matrix[i] = embedding_vector
 
-            np.savetxt(self.dataDir+'embedding_matrix.csv', embedding_matrix, delimiter=',')
+            np.savetxt(self.dataDir+'{}_embedding_matrix.csv'.format(vocab_size), embedding_matrix, delimiter=',')
             print ('done building embedding matrix')
 
-        else: embedding_matrix = np.loadtxt(open(self.dataDir+'embedding_matrix.csv', "rb"), delimiter=",")
+        else: embedding_matrix = np.loadtxt(open(self.dataDir+'{}_embedding_matrix.csv'.format(vocab_size), "rb"), delimiter=",")
 
 
 
@@ -106,7 +115,8 @@ class Machine:
         self.df.lib = self.df['lib'].apply(self._arrayOfInt)
 
         targetTexts = [self.df.line1, self.df.line2, self.df.line3 ]
-        target_words = [ set(' '.join(item).split(' ')) for item in targetTexts ]
+        #target_words = [ set(' '.join(item).split(' ')) for item in targetTexts ]
+        target_words = [ set(' '.join(item).split(' ')).union(set(['__unknown'])) for item in targetTexts ] # add unknown token to vocab of target texts
 
         num_encoder_tokens = vocab_size
         num_decoder_tokens = [len(i) for i in target_words ]
@@ -115,13 +125,24 @@ class Machine:
             num_decoder_tokens[i] += 1
 
         target_token_index = [dict( [(char, i+1) for i, char in enumerate(j)]) for j in target_words]
+
+      
+        
+
+
         reverse_target_char_index = [dict((i, word) for word, i in j.items()) for j in target_token_index ]
 
         max_encoder_seq_length = max_len
         max_decoder_seq_length = [ max ([len(column[i].split(' ')) for i in range(self.df.shape[0])]) for column in targetTexts]
 
         input_token_index = t.word_index
+
+        #print (input_token_index)
         reverse_input_char_index = dict(map(reversed, t.word_index.items()))
+
+
+        #print (t.word_index)
+        #print (reverse_input_char_index )
 
         y = np.array( targetTexts)
 
@@ -153,7 +174,7 @@ class Machine:
 
         latent_dim = self.params['embedding_matrix'].shape[1]
         dropout=0.1 #regularization , to prevent over fitting
-        learning_rate = 0.005
+        learning_rate = 0.0025
 
         import sys, os
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
@@ -196,7 +217,9 @@ class Machine:
 
             else:
                 x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
-                    (x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([state_c , last_states_cs[i-1], syllabus_dense[i]])])
+                    (x,   initial_state=[Add()([last_states_hs[i-1], syllabus_dense[i]]), Add()([last_states_cs[i-1], syllabus_dense[i]])])
+                    #(x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([state_c , last_states_cs[i-1], syllabus_dense[i]])])
+                    
 
                 last_states_hs.append(x_state_h)
                 last_states_cs.append(x_state_c)
@@ -215,8 +238,8 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=32 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=32)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=16 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=16)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
@@ -232,7 +255,7 @@ class Machine:
 
         model.save(self.modelDir+'/modelv2-b.h5')
         print ('saved model in {}'.format(self.modelDir))
-        #model.save_weights(modelDir+'modelv2_weights.h5')
+       
 
 
 
@@ -240,5 +263,5 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=6)
+    h = haiku.train(epochs=2)
     print (h.history)

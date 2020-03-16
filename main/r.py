@@ -120,12 +120,14 @@ class lineMaker:
                 return sorted(embeddings_index.keys(), key=lambda word: spatial.distance.euclidean(embeddings_index[word], embedding))
 
             try: words = __find_closest_embeddings(embeddings_index[word])[1:]
-            except: return _index['unknown']  # becuase we know unknown is aleady there la....
+            except: return _index['__unknown']  # becuase we know unknown is aleady there la....
             for w in words:
                 try: return _index[w] # try returnin the closet word and hope our vocab has that word
                 except: 
                     print (word, w)
-                    #return _index['unknown']
+                    
+                    #return _index['__unknown'] 
+                    return _index['unknown'] 
             
             
             return _index[word]

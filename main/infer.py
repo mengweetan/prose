@@ -101,7 +101,9 @@ def getInferenceModels():
 
         else:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
-                (x,   initial_state=[Add()([decoder_state_input_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([decoder_state_input_c , last_states_cs[i-1], syllabus_dense[i]])])
+                (x,   initial_state=[Add()([last_states_hs[i-1], syllabus_dense[i]]), Add()([last_states_cs[i-1], syllabus_dense[i]])])
+                #(x,   initial_state=[Add()([decoder_state_input_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([decoder_state_input_c , last_states_cs[i-1], syllabus_dense[i]])])
+                
 
             last_states_hs.append(x_state_h)
             last_states_cs.append(x_state_c)
