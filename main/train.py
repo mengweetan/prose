@@ -63,7 +63,7 @@ class Machine:
 
     def _setup(self):
 
-        #self.df = self.df[:10000]
+        self.df = self.df[:15000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -236,7 +236,7 @@ class Machine:
 
         latent_dim = self.params['embedding_matrix'].shape[1]
         dropout=0.1 #regularization , to prevent over fitting
-        learning_rate = 0.0025
+        learning_rate = 0.005
 
         import sys, os
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
@@ -298,6 +298,7 @@ class Machine:
         #model = Model([inputs, tuple(np.array(aux_inputs).tolist()), tuple(np.array(syllabus_inputs).tolist())], [tuple(np.array(outputs).tolist())], name='machine')
         model = Model([inputs, aux_inputs[0],aux_inputs[1],aux_inputs[2], syllabus_inputs[0],syllabus_inputs[1],syllabus_inputs[2]], [outputs[0],outputs[1],outputs[2]], name='machine')
 
+        #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         model.summary()
 
@@ -306,18 +307,18 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=64 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=64)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
             os.makedirs(self.modelDir)
 
         mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
-        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
+        es = EarlyStopping(monitor='predict0_loss', mode='min', verbose=1)
 
         
-        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
+        history = model.fit(training_generator, validation_data=validation_generator, shuffle=True, epochs=epochs, callbacks=[mc,es] )
         
         #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
@@ -330,7 +331,30 @@ class Machine:
 
         return history
 
+    def plot(self,h) :
+
+        import matplotlib.pyplot as plt
+        print (h.history)
+        
+        legend =[]
+        for i in range(3):
+            plt.plot(h.history['predict{}_loss'.format(i)],'blue')
+            plt.plot(h.history['val_predict{}_loss'.format(i)],'black')
+            legend.append('train_{}_loss'.format(i))
+            legend.append('val_{}_loss'.format(i))
+
+        #plt.figure()
+        #f, ax = plt.subplots()
+        #ticks =  ax.get_xticks()
+        #ax.set_xticklabels([int(abs(tick)) for tick in ticks])
+        plt.legend(legend, loc='upper right')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.savefig(self.dataDir+'HISTORY.png')
+        
+
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=10)
-    print (h.history)
+    h = haiku.train(epochs=5)
+    haiku.plot(h)
+    
