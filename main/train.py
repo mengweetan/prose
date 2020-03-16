@@ -63,17 +63,17 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:15000]
+        self.df = self.df[:10000]
        
         print (self.df.info())
 
         t = Tokenizer()
         t.fit_on_texts([self.df['input_texts'][i] for i in range(self.df.shape[0])])
         
-        print (len(t.word_index) )
+        #print (len(t.word_index) )
         t.word_index['__unknown'] = len(t.word_index) + 1 
         vocab_size = len(t.word_index)
-        print (vocab_size )
+        #print (vocab_size )
         
         vocab_size = len(t.word_index) + 1 # note - padded 1
 
@@ -316,8 +316,8 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=64 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=64)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
@@ -327,7 +327,8 @@ class Machine:
         es = EarlyStopping(monitor='predict0_loss', mode='min', verbose=1)
 
         
-        history = model.fit(training_generator, validation_data=validation_generator, shuffle=True, epochs=epochs, callbacks=[mc,es] )
+        
+        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, callbacks=[mc,es] )
         
         ##history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
