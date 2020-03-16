@@ -65,7 +65,7 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:20000]
+        #self.df = self.df[:20000]
        
         print (self.df.info())
 
@@ -246,7 +246,7 @@ class Machine:
 
         latent_dim = self.params['embedding_matrix'].shape[1]
         dropout=0.1 #regularization , to prevent over fitting
-        learning_rate = 0.005
+        learning_rate = 0.0025
 
         import sys, os
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
@@ -309,33 +309,70 @@ class Machine:
         #model = Model([inputs, tuple(np.array(aux_inputs).tolist()), tuple(np.array(syllabus_inputs).tolist())], [tuple(np.array(outputs).tolist())], name='machine')
         model = Model([inputs, aux_inputs[0],aux_inputs[1],aux_inputs[2], syllabus_inputs[0],syllabus_inputs[1],syllabus_inputs[2]], [outputs[0],outputs[1],outputs[2]], name='machine')
 
-        #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        model.summary()
+        
 
 
         from r import DataGenerator
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=128 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=128)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=16 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=16)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
             os.makedirs(self.modelDir)
 
-        mc = ModelCheckpoint(self.modelDir+'/modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
-        es = EarlyStopping(monitor='predict0_loss', mode='min', verbose=1)
 
-        log_dir = "data\\logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        # tensorboard stuff
+        from tensorboard.plugins.hparams import api as hp
+        HP_DROPOUT = hp.HParam('dropout', hp.RealInterval(0.1, 0.2))
+        HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam', 'sgd','rmsprop']))
+        METRIC_ACCURACY = 'accuracy'
+
+        with tf.summary.create_file_writer('logs/hparam_tuning').as_default():
+            hp.hparams_config(
+                hparams=[HP_DROPOUT, HP_OPTIMIZER],
+                metrics=[hp.Metric(METRIC_ACCURACY, display_name='Accuracy')],
+            )
+
+
+        logdir = "data\\logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         #log_dir = self.dataDir+"logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        tfc = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+        file_writer = tf.summary.create_file_writer(logdir + "/metrics")
+        file_writer.set_as_default()
+        def lr_schedule(epochs):
+            """
+            Returns a custom learning rate that decreases as epochs progress.
+            """
+            learning_rate = 0.2
+            if epochs > 10:
+                learning_rate = 0.02
+            if epochs > 20:
+                learning_rate = 0.01
+            if epochs > 50:
+                learning_rate = 0.005
+
+            tf.summary.scalar('learning rate', data=learning_rate, step=epochs)
+            return learning_rate
+
+        lrc = tf.keras.callbacks.LearningRateScheduler(lr_schedule)
+
+
+        tfc = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
         # launch at console: tensorboard --logdir data/logs/fit
+        mc = ModelCheckpoint(self.modelDir+'/modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
+        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)
+
+
+        #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        model.summary()
+        history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es,tfc,lrc] )
         
-        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, callbacks=[mc,es,tfc] )
-        
-        ##history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+        #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True, callbacks=[mc,es,tfc,lrc])
 
 
         model.save(self.modelDir+'/modelv2-b.h5')
@@ -393,6 +430,6 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=10)
+    h = haiku.train(epochs=30)
     haiku.plot(h)
     

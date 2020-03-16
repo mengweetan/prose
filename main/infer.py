@@ -46,7 +46,7 @@ def getInferenceModels():
 
     '''
     load_model = tf.keras.models.load_model
-    model = load_model('model/haiku/modelv2-b.h5',custom_objects={'tf': tf}, compile=False)
+    model = load_model('model/haiku/modelv2-best.h5',custom_objects={'tf': tf}, compile=False)
     encoder_model = Model( [ model.inputs[0], model.inputs[4], model.inputs[5], model.inputs[6]], [model.layers[4].output[1],model.layers[4].output[2] ])
 
 
@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     from r import lineMaker
     #seed ="long john silver"
-
+ 
 
 
     encoder_model, decoder_model = getInferenceModels()

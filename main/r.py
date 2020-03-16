@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import string
+import string, os
 
 
 import tensorflow as tf
@@ -105,6 +105,7 @@ class lineMaker:
         self.encoder_model = encoder_model
         self.decoder_model = decoder_model
         self.params = params
+        self.dataDir = 'data/'
 
 
 
@@ -113,7 +114,9 @@ class lineMaker:
         from utils import get_syllables
         from scipy import spatial
         embeddings_index = dict()
-        f = open('data/'+'/glove.6B/glove.6B.50d.txt') 
+        if os.name == 'nt': f = open(self.dataDir+'glove.6B/glove.6B.50d.txt',  encoding='utf-8') # try 50 dimension
+        else: f = open(self.dataDir+'glove.6B/glove.6B.50d.txt')
+        #f = open('data/'+'/glove.6B/glove.6B.50d.txt') 
         for line in f:
             values = line.split()
             word = values[0]
@@ -266,8 +269,8 @@ class lineMaker:
                     syllabus_count[j] += get_syllables(word)
 
                 syllabus_limit = 7 if j==1 else 5
-                #if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
-                if word == '__end': max_syllabus[j] = True
+                if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
+                #if word == '__end': max_syllabus[j] = True
                 else:
 
                     if j == 0:
