@@ -306,8 +306,8 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=64 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=64)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
