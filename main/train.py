@@ -63,7 +63,7 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:15000]
+        #self.df = self.df[:10000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -314,7 +314,7 @@ class Machine:
         if not os.path.exists(self.modelDir):
             os.makedirs(self.modelDir)
 
-        mc = ModelCheckpoint(self.modelDir+'modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
+        mc = ModelCheckpoint(self.modelDir+'/modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
         es = EarlyStopping(monitor='predict0_loss', mode='min', verbose=1)
 
         
@@ -350,7 +350,7 @@ class Machine:
         plt.legend(legend, loc='upper right')
         plt.ylabel('Accuracy')
         plt.xlabel('Epoch')
-        plt.savefig(self.dataDir+'HISTORY.png')
+        plt.savefig(self.modelDir+'/HISTORY.png')
         
 
 if __name__ == "__main__":
