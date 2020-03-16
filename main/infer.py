@@ -73,6 +73,7 @@ def getInferenceModels():
     syllabus_state_hs = []
     syllabus_state_cs = []
     syllabus_dense = []
+    xs = []
 
     last_states_hs = []
     last_states_cs = []
@@ -91,17 +92,20 @@ def getInferenceModels():
 
         syllabus_dense.append( Dense(latent_dim , activation='softmax')  (syllabus_inputs[i]) )
 
-        x = Embedding(haiku.params['num_decoder_tokens'][i]+1, latent_dim, mask_zero = True, name='line{}'.format(i)) (aux_inputs[i])
+        #x = Embedding(haiku.params['num_decoder_tokens'][i]+1, latent_dim, mask_zero = True, name='line{}'.format(i)) (aux_inputs[i])
+        xs.append(Embedding(haiku.params['num_decoder_tokens'][i], latent_dim, embeddings_initializer=Constant(haiku.params['target_embedding_matrix'][i]), input_length=haiku.params['max_decoder_seq_length'][i], trainable=False, \
+                mask_zero = True, name='line{}'.format(i)) (aux_inputs[i]) )
+
         if i == 0:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True, name='lstm{}'.format(i)) \
-                (x,   initial_state=[Add()([decoder_state_input_h , syllabus_dense[i]]), Add()([decoder_state_input_c , syllabus_dense[i]])])
+                (xs[i],   initial_state=[Add()([decoder_state_input_h , syllabus_dense[i]]), Add()([decoder_state_input_c , syllabus_dense[i]])])
 
             last_states_hs.append(x_state_h)
             last_states_cs.append(x_state_c)
 
         else:
             x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
-                (x,   initial_state=[Add()([last_states_hs[i-1], syllabus_dense[i]]), Add()([last_states_cs[i-1], syllabus_dense[i]])])
+                (xs[i],   initial_state=[Add()([last_states_hs[i-1], syllabus_dense[i]]), Add()([last_states_cs[i-1], syllabus_dense[i]])])
                 #(x,   initial_state=[Add()([decoder_state_input_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([decoder_state_input_c , last_states_cs[i-1], syllabus_dense[i]])])
                 
 

@@ -5,7 +5,7 @@ import string
 
 import tensorflow as tf
 pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
-Tokenizer = tf.keras.preprocessing.text.Tokenizer
+#Tokenizer = tf.keras.preprocessing.text.Tokenizer
 
 
 
@@ -70,13 +70,21 @@ class DataGenerator(Sequence):
                 for z, line_text in enumerate(target_text):
 
                     # old model
-                    for t, word in enumerate(line_text.split(' ')): # because we are using multiple outputs
+                    #for t, word in enumerate(line_text.split(' ')): # before line_text is not an array
+                    for t, word in enumerate(line_text): # line_text is already an array    
+                        #print (z, i, t, word)
+                        #print (line_text)
                         # decoder_target_data is ahead of decoder_input_data by one timestep
-                        _aux_input[z][i, t] = params['target_token_index'][z][word] # decoder input seq
+                        #_aux_input[z][i, t] = params['target_token_index'][z][word] # decoder input seq # before line_text is not an array
+                        _aux_input[z][i, t] = word # decoder input seq # before line_text is not an array
                         if t>0:
+                            #print (line_text)
+                            #print (params['num_decoder_tokens'][z])
+                            #print (z, i, t, word)
                             # decoder_target_data will be ahead by one timestep
                             # and will not include the start character.
-                            _output[z][i, t - 1, params['target_token_index'][z][word]] = 1.
+                            #_output[z][i, t - 1, params['target_token_index'][z][word]] = 1. # last time is a word
+                            _output[z][i, t - 1, word] = 1. # now straight away set the position
 
                     #_aux_input[z][i, t+1:] = params['target_token_index'][z][''] #
                     #_output[z][i, t:, params['target_token_index'][z]['']] = 1.
@@ -124,7 +132,7 @@ class lineMaker:
             for w in words:
                 try: return _index[w] # try returnin the closet word and hope our vocab has that word
                 except: 
-                    print (word, w)
+                    # print (word, w)
                     
                     #return _index['__unknown'] 
                     return _index['unknown'] 
@@ -157,17 +165,10 @@ class lineMaker:
         seed = _
         
 
-        t = Tokenizer()
-        '''
-        t = Tokenizer()
-        t.fit_on_texts([seed])
-        t.word_index
-
-        for i in t.word_index:
-            print (i)
-            print (_index[i])
-        '''
-        print (self.params['max_encoder_seq_length'])
+        
+      
+        #print (self.params['max_encoder_seq_length'])
+        #print (self.params['target_token_index'][0])
 
         #encoded_docs = t.texts_to_sequences([seed])
         encoded_docs = [seed]

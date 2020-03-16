@@ -63,7 +63,7 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:10000]
+        #self.df = self.df[:10000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -76,12 +76,16 @@ class Machine:
         
         vocab_size = len(t.word_index) + 1 # note - padded 1
 
-
+        input_token_index = t.word_index
+        reverse_input_char_index = dict(map(reversed, t.word_index.items()))
 
         
         encoded_docs = t.texts_to_sequences([self.df['input_texts'][i] for i in range(self.df.shape[0])])
         max_len = max([len(l) for l in encoded_docs]) # get the max len
         padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
+
+        max_encoder_seq_length = max_len
+        num_encoder_tokens = vocab_size
 
         embeddings_index = None
         dimension_of_matrix = None
@@ -112,7 +116,7 @@ class Machine:
 
         else: embedding_matrix = np.loadtxt(open(self.dataDir+'{}_embedding_matrix.csv'.format(vocab_size), "rb"), delimiter=",")
 
-
+        # now do the decoding matrix stuff
 
         self.df.line1=self.df['line1'].apply(self._process_target_texts)
         self.df.line2=self.df['line2'].apply(self._process_target_texts)
@@ -121,20 +125,50 @@ class Machine:
 
         targetTexts = [self.df.line1, self.df.line2, self.df.line3 ]
         #target_words = [ set(' '.join(item).split(' ')) for item in targetTexts ]
-        target_words = [ set(' '.join(item).split(' ')).union(set(['__unknown'])) for item in targetTexts ] # add unknown token to vocab of target texts
+        #target_words = [ set(' '.join(item).split(' ')).union(set(['__unknown'])) for item in targetTexts ] # add unknown token to vocab of target texts
 
-        num_encoder_tokens = vocab_size
-        num_decoder_tokens = [len(i) for i in target_words ]
+        
+        # num_decoder_tokens = [len(i) for i in target_words ]
 
-        target_token_index = [dict( [(char, i+1) for i, char in enumerate(j)]) for j in target_words]
-        reverse_target_char_index = [dict((i, word) for word, i in j.items()) for j in target_token_index ]
+        # target_token_index = [dict( [(char, i+1) for i, char in enumerate(j)]) for j in target_words]
+        #reverse_target_char_index = [dict((i, word) for word, i in j.items()) for j in target_token_index ]
 
-        for i in range(self.HAIKU_LINES_NUM):
-            num_decoder_tokens[i] += 1
+        #for i in range(self.HAIKU_LINES_NUM):
+        #     num_decoder_tokens[i] += 1
 
         target_embedding_matrix = []
         
+        #for i in range(self.HAIKU_LINES_NUM):
+
+            
+
+
+
+       
+        max_decoder_seq_length = [ max ([len(column[i].split(' ')) for i in range(self.df.shape[0])]) for column in targetTexts]
+
+        num_decoder_tokens, target_token_index , reverse_target_char_index, decode_tokenizer, decoded_docs, decoded_padded_docs  = [], [], [], [], [], []
+
         for i in range(self.HAIKU_LINES_NUM):
+            decode_tokenizer.append(Tokenizer())
+            decode_tokenizer[i].fit_on_texts([targetTexts[i][j] for j in range(self.df.shape[0])])
+
+            
+
+            decode_tokenizer[i].word_index['__unknown'] = len(decode_tokenizer[i].word_index) + 1 
+            decode_tokenizer[i].word_index['start__'] = len(decode_tokenizer[i].word_index) + 1 
+            decode_tokenizer[i].word_index['__end'] = len(decode_tokenizer[i].word_index) + 1 
+
+            num_decoder_tokens.append(len(decode_tokenizer[i].word_index))
+       
+            num_decoder_tokens[i] += 1 # note - padded 1
+
+            target_token_index.append(decode_tokenizer[i].word_index)
+            reverse_target_char_index.append( dict(map(reversed, decode_tokenizer[i].word_index.items())))
+
+            decoded_docs.append( decode_tokenizer[i].texts_to_sequences([ targetTexts[i][j] for j in range(self.df.shape[0])])  )
+            decoded_padded_docs.append( pad_sequences(decoded_docs[i], maxlen=max_decoder_seq_length[i], padding='post'))
+
             if self.build_matrix:
                 target_embedding_matrix.append(np.zeros((num_decoder_tokens[i], dimension_of_matrix)) )# because we are using 50 dimension pre trained embedding
                 for word, j in target_token_index[i].items():
@@ -143,29 +177,36 @@ class Machine:
                         target_embedding_matrix[i][j] = embedding_vector
 
                 np.savetxt(self.dataDir+'{}_{}_target_embedding_matrix.csv'.format(num_decoder_tokens[i],i), target_embedding_matrix[i], delimiter=',')
+                print ('finished target matrix')
 
 
-            else: target_embedding_matrix[i] = np.loadtxt(open(self.dataDir+'{}_{}_target_embedding_matrix.csv'.format(num_decoder_tokens[i],i), "rb"), delimiter=",")
+            else: target_embedding_matrix.append ( np.loadtxt(open(self.dataDir+'{}_{}_target_embedding_matrix.csv'.format(num_decoder_tokens[i],i), "rb"), delimiter=",") )
+
+        targetTexts =   np.array(decoded_docs) 
+        #print (targetTexts.shape)
+        #print (decoded_docs[0])
+        #print (decoded_padded_docs[0].shape)
+        #targetTexts =   np.array(decoded_padded_docs)
+        #print (targetTexts.shape)
+
+        #print (target_token_index[0])
+       
+        
 
 
 
 
+        
 
-        max_encoder_seq_length = max_len
-        max_decoder_seq_length = [ max ([len(column[i].split(' ')) for i in range(self.df.shape[0])]) for column in targetTexts]
-
-        input_token_index = t.word_index
-
-        #print (input_token_index)
-        reverse_input_char_index = dict(map(reversed, t.word_index.items()))
-
-
-        #print (t.word_index)
-        #print (reverse_input_char_index )
-
+        '''
         y = np.array( targetTexts)
+        print ('y', y.shape)
 
         self.y = y.transpose()
+        '''
+
+        self.y = targetTexts.transpose()
+        print (self.y.shape)
         self.X = (padded_docs , self.df.lib)
 
         self.params ={
@@ -180,6 +221,8 @@ class Machine:
             'number_of_output':self.HAIKU_LINES_NUM,
             'HAIKU_LINES_NUM':self.HAIKU_LINES_NUM,
 	    	'embedding_matrix':embedding_matrix,
+            'target_embedding_matrix':target_embedding_matrix,
+
                         #'latent_dim':latent_dim,
                         #'num_syllabus':self.num_syllabus = len(syllabus)
             }
@@ -216,7 +259,7 @@ class Machine:
         _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
 
 
-        aux_inputs = [Input(shape=(None,), name='aux_input_{}'.format(i)) for i in range(self.params['HAIKU_LINES_NUM'])]
+        aux_inputs = [Input(shape=(self.params['max_decoder_seq_length'][i],), name='aux_input_{}'.format(i)) for i in range(self.params['HAIKU_LINES_NUM'])]
 
         syllabus_inputs = [Input(shape=(1,), name='syllabus_input_{}'.format(i)) for i in range(self.params['HAIKU_LINES_NUM'])]
 
@@ -224,21 +267,25 @@ class Machine:
         last_states_hs = []
         last_states_cs = []
         outputs = []
+        xs = []
 
         for i in range(self.params['HAIKU_LINES_NUM']):
 
             syllabus_dense.append( Dense(latent_dim , activation='softmax')  (syllabus_inputs[i]) )
-            x = Embedding(self.params['num_decoder_tokens'][i]+1, latent_dim, mask_zero = True, name='line{}'.format(i)) (aux_inputs[i])
+            #xs.append(Embedding(self.params['num_decoder_tokens'][i]+1, latent_dim, embeddings_initializer=Constant(self.params['target_embedding_matrix'][i]), input_length=self.params['max_decoder_seq_length'][i], trainable=False, \
+            #    mask_zero = True, name='line{}'.format(i)) (aux_inputs[i]) )
+            xs.append(Embedding(self.params['num_decoder_tokens'][i], latent_dim, embeddings_initializer=Constant(self.params['target_embedding_matrix'][i]), input_length=self.params['max_decoder_seq_length'][i], trainable=False, \
+                mask_zero = True, name='line{}'.format(i)) (aux_inputs[i]) )
             if i == 0:
                 x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True, name='lstm{}'.format(i)) \
-                    (x,   initial_state=[Add()([state_h , syllabus_dense[i]]), Add()([state_c , syllabus_dense[i]])])
+                    (xs[i],   initial_state=[Add()([state_h , syllabus_dense[i]]), Add()([state_c , syllabus_dense[i]])])
 
                 last_states_hs.append(x_state_h)
                 last_states_cs.append(x_state_c)
 
             else:
                 x, x_state_h, x_state_c = LSTM(latent_dim , return_sequences=True,  return_state=True,name='lstm{}'.format(i)) \
-                    (x,   initial_state=[Add()([last_states_hs[i-1], syllabus_dense[i]]), Add()([last_states_cs[i-1], syllabus_dense[i]])])
+                    (xs[i],   initial_state=[Add()([last_states_hs[i-1], syllabus_dense[i]]), Add()([last_states_cs[i-1], syllabus_dense[i]])])
                     #(x,   initial_state=[Add()([state_h , last_states_hs[i-1], syllabus_dense[i]]), Add()([state_c , last_states_cs[i-1], syllabus_dense[i]])])
                     
 
@@ -259,8 +306,8 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=16 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=16)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
@@ -270,11 +317,12 @@ class Machine:
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
         
-        #history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
+        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
+        
         #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
 
-        #model.save(self.modelDir+'/modelv2-b.h5')
+        model.save(self.modelDir+'/modelv2-b.h5')
         print ('saved model in {}'.format(self.modelDir))
        
 
