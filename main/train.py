@@ -63,7 +63,7 @@ class Machine:
 
     def _setup(self):
 
-        #self.df = self.df[:10000]
+        self.df = self.df[:10000]
         print (self.df.info())
 
         t = Tokenizer()
@@ -83,19 +83,21 @@ class Machine:
         max_len = max([len(l) for l in encoded_docs]) # get the max len
         padded_docs = pad_sequences(encoded_docs, maxlen=max_len, padding='post')
 
+        embeddings_index = None
+        dimension_of_matrix = None
         if self.build_matrix:
 
             embeddings_index = dict()
             if os.name == 'nt': f = open(self.dataDir+'glove.6B/glove.6B.50d.txt',  encoding='utf-8') # try 50 dimension
             else: f = open(self.dataDir+'glove.6B/glove.6B.50d.txt')
             for line in f:
-        	    values = line.split()
-        	    word = values[0]
-        	    coefs = np.asarray(values[1:], dtype='float32')
+        	    matrix_values = line.split()
+        	    word = matrix_values[0]
+        	    coefs = np.asarray(matrix_values[1:], dtype='float32')
         	    embeddings_index[word] = coefs
             f.close()
 
-            dimension_of_matrix =len(values)-1
+            dimension_of_matrix =len(matrix_values)-1
             embedding_matrix = np.zeros((vocab_size, dimension_of_matrix)) # because we are using 50 dimension pre trained embedding
             for word, i in t.word_index.items():
                 embedding_vector = embeddings_index.get(word)
@@ -103,6 +105,9 @@ class Machine:
                     embedding_matrix[i] = embedding_vector
 
             np.savetxt(self.dataDir+'{}_embedding_matrix.csv'.format(vocab_size), embedding_matrix, delimiter=',')
+
+
+
             print ('done building embedding matrix')
 
         else: embedding_matrix = np.loadtxt(open(self.dataDir+'{}_embedding_matrix.csv'.format(vocab_size), "rb"), delimiter=",")
@@ -121,16 +126,30 @@ class Machine:
         num_encoder_tokens = vocab_size
         num_decoder_tokens = [len(i) for i in target_words ]
 
+        target_token_index = [dict( [(char, i+1) for i, char in enumerate(j)]) for j in target_words]
+        reverse_target_char_index = [dict((i, word) for word, i in j.items()) for j in target_token_index ]
+
         for i in range(self.HAIKU_LINES_NUM):
             num_decoder_tokens[i] += 1
 
-        target_token_index = [dict( [(char, i+1) for i, char in enumerate(j)]) for j in target_words]
-
-      
+        target_embedding_matrix = []
         
+        for i in range(self.HAIKU_LINES_NUM):
+            if self.build_matrix:
+                target_embedding_matrix.append(np.zeros((num_decoder_tokens[i], dimension_of_matrix)) )# because we are using 50 dimension pre trained embedding
+                for word, j in target_token_index[i].items():
+                    embedding_vector = embeddings_index.get(word)
+                    if embedding_vector is not None:
+                        target_embedding_matrix[i][j] = embedding_vector
+
+                np.savetxt(self.dataDir+'{}_{}_target_embedding_matrix.csv'.format(num_decoder_tokens[i],i), target_embedding_matrix[i], delimiter=',')
 
 
-        reverse_target_char_index = [dict((i, word) for word, i in j.items()) for j in target_token_index ]
+            else: target_embedding_matrix[i] = np.loadtxt(open(self.dataDir+'{}_{}_target_embedding_matrix.csv'.format(num_decoder_tokens[i],i), "rb"), delimiter=",")
+
+
+
+
 
         max_encoder_seq_length = max_len
         max_decoder_seq_length = [ max ([len(column[i].split(' ')) for i in range(self.df.shape[0])]) for column in targetTexts]
@@ -251,11 +270,11 @@ class Machine:
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
 
         
-        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
+        #history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, validation_freq=2, callbacks=[mc,es] )
         #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
 
-        model.save(self.modelDir+'/modelv2-b.h5')
+        #model.save(self.modelDir+'/modelv2-b.h5')
         print ('saved model in {}'.format(self.modelDir))
        
 
