@@ -364,7 +364,7 @@ class Machine:
         tfc = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
         # launch at console: tensorboard --logdir data/logs/fit
         mc = ModelCheckpoint(self.modelDir+'/modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
-        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=5)
+        es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=5)
 
 
         #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
