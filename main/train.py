@@ -63,7 +63,8 @@ class Machine:
 
     def _setup(self):
 
-        #self.df = self.df[:10000]
+        self.df = self.df[:15000]
+       
         print (self.df.info())
 
         t = Tokenizer()
@@ -185,6 +186,13 @@ class Machine:
         targetTexts =   np.array(decoded_docs) 
         #print (targetTexts.shape)
         #print (decoded_docs[0])
+        #print (decoded_docs[0].shape)
+        #print (decoded_padded_docs.shape)
+        #print (decoded_padded_docs[2].shape)
+        targetTexts = np.array([i.tolist() for i in decoded_padded_docs])
+        
+        #print (targetTexts.shape)
+        #print (decoded_docs[0])
         #print (decoded_padded_docs[0].shape)
         #targetTexts =   np.array(decoded_padded_docs)
         #print (targetTexts.shape)
@@ -242,8 +250,9 @@ class Machine:
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
 
         if python_version == 2: optimizer = 'rmsprop'
+        else: optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
         #else: optimizer =  tf.keras.optimizers.Adagrad()
-	    else: optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
+	    
 		
 
         # Model Architecture
@@ -320,7 +329,7 @@ class Machine:
         
         history = model.fit(training_generator, validation_data=validation_generator, shuffle=True, epochs=epochs, callbacks=[mc,es] )
         
-        #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
+        ##history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
 
         model.save(self.modelDir+'/modelv2-b.h5')
@@ -336,6 +345,28 @@ class Machine:
         import matplotlib.pyplot as plt
         print (h.history)
         
+
+        f, axs = plt.subplots(2,figsize=(15,15))
+
+        legend =[]
+        for i in range(3):
+            axs[0].plot(h.history['predict{}_loss'.format(i)],'blue')
+            axs[0].plot(h.history['val_predict{}_loss'.format(i)],'black')
+            legend.append('train_{}_loss'.format(i))
+            legend.append('val_{}_loss'.format(i))
+            axs[1].plot(h.history['predict{}_accuracy'.format(i)],'red')
+
+        #plt.figure()
+        #
+        #ticks =  ax.get_xticks()
+        #ax.set_xticklabels([int(abs(tick)) for tick in ticks])
+        axs[0].legend(legend, loc='upper right')
+        #axs[0].ylabel('Accuracy')
+        #axs[0].xlabel('Epoch')
+
+        
+
+        '''
         legend =[]
         for i in range(3):
             plt.plot(h.history['predict{}_loss'.format(i)],'blue')
@@ -344,12 +375,13 @@ class Machine:
             legend.append('val_{}_loss'.format(i))
 
         #plt.figure()
-        #f, ax = plt.subplots()
+        #
         #ticks =  ax.get_xticks()
         #ax.set_xticklabels([int(abs(tick)) for tick in ticks])
         plt.legend(legend, loc='upper right')
         plt.ylabel('Accuracy')
         plt.xlabel('Epoch')
+        '''
         plt.savefig(self.modelDir+'/HISTORY.png')
         
 
