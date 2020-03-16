@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-import os
+import os, datetime
 
 Model = tf.keras.models.Model
 Input = tf.keras.layers.Input
@@ -18,6 +18,8 @@ ModelCheckpoint = tf.keras.callbacks.ModelCheckpoint
 
 pad_sequences = tf.keras.preprocessing.sequence.pad_sequences
 Tokenizer = tf.keras.preprocessing.text.Tokenizer
+
+TensorBoard =  tf.keras.callbacks.TensorBoard
 
 from argparse import ArgumentParser
 
@@ -63,7 +65,7 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:10000]
+        self.df = self.df[:20000]
        
         print (self.df.info())
 
@@ -316,8 +318,8 @@ class Machine:
         #import r
         #DataGenerator = r.DataGenerator
 
-        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=256 )
-        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=256)
+        training_generator = DataGenerator(self.X, self.y, self.params, batch_size=128 )
+        validation_generator = DataGenerator(self.X, self.y, self.params, batch_size=128)
 
         self.modelDir = self.modelDir if self.modelDir else 'model/haiku'
         if not os.path.exists(self.modelDir):
@@ -326,9 +328,12 @@ class Machine:
         mc = ModelCheckpoint(self.modelDir+'/modelv2-best.h5',monitor='val_loss', verbose=1, save_best_only=True)
         es = EarlyStopping(monitor='predict0_loss', mode='min', verbose=1)
 
+        log_dir = "data\\logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        #log_dir = self.dataDir+"logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        tfc = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+        # launch at console: tensorboard --logdir data/logs/fit
         
-        
-        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, callbacks=[mc,es] )
+        history = model.fit(training_generator, validation_data=validation_generator,  shuffle=True, epochs=epochs, callbacks=[mc,es,tfc] )
         
         ##history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True,)
 
@@ -388,6 +393,6 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=5)
+    h = haiku.train(epochs=10)
     haiku.plot(h)
     
