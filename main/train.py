@@ -65,7 +65,7 @@ class Machine:
 
     def _setup(self):
 
-        #self.df = self.df[:20000]
+        self.df = self.df[:1000]
        
         print (self.df.info())
 
@@ -214,7 +214,7 @@ class Machine:
 
         self.y = y.transpose()
         '''
-
+        print (self.df.lib.shape)
         self.y = targetTexts.transpose()
         print (self.y.shape)
         self.X = (padded_docs , self.df.lib)
@@ -338,8 +338,8 @@ class Machine:
             )
 
 
-        logdir = "data\\logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        #log_dir = self.dataDir+"logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        #logdir = "data\\logs\\fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        logdir = self.dataDir+"logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
         file_writer = tf.summary.create_file_writer(logdir + "/metrics")
         file_writer.set_as_default()
@@ -367,9 +367,10 @@ class Machine:
         es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=5)
 
 
-        #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        model.summary()
+        # model.summary()
+
         history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es,tfc,lrc] )
         
         #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True, callbacks=[mc,es,tfc,lrc])
@@ -430,6 +431,6 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=30)
+    h = haiku.train(epochs=1)
     haiku.plot(h)
     

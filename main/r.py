@@ -52,7 +52,7 @@ class DataGenerator(Sequence):
             _aux_input = [np.zeros((batch_size, params['max_decoder_seq_length'][ii]),dtype='float32') for ii in range(params['number_of_output'])]
             # new model
 
-
+            #_syllabus_inputs = np.zeros((batch_size,),) 
             _syllabus_inputs = [np.zeros((batch_size,),dtype='float32') for ii in range(params['number_of_output'])]
 
             _output = [np.zeros((batch_size, params['max_decoder_seq_length'][ii], params['num_decoder_tokens'][ii]),dtype='float32')  for ii in range(params['number_of_output'])]
@@ -88,7 +88,14 @@ class DataGenerator(Sequence):
 
                     #_aux_input[z][i, t+1:] = params['target_token_index'][z][''] #
                     #_output[z][i, t:, params['target_token_index'][z]['']] = 1.
-
+            
+            for i, lib in enumerate(X[1][j:j+batch_size]):
+                
+                for j in range(params['number_of_output']):
+                    
+                    _syllabus_inputs[j][i] = lib[j]
+                       
+                        
 
 
 
