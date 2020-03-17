@@ -91,10 +91,10 @@ class DataGenerator(Sequence):
             
             for i, lib in enumerate(X[1][j:j+batch_size]):
                 
-                for j in range(params['number_of_output']):
-                    
-                    _syllabus_inputs[j][i] = lib[j]
-                       
+                for ii in range(params['number_of_output']):
+                    #print (lib[ii])
+                    _syllabus_inputs[ii][i] = lib[ii]
+                    #print (_syllabus_inputs[ii])
                         
 
 
@@ -189,7 +189,7 @@ class lineMaker:
 
         
 
-        def _sample(preds, temperature=0.5):
+        def _sample(preds, temperature=0.9):
 
             preds = np.asarray(preds).astype('float64')
             preds = np.log(preds) / temperature # 1 is temperature
@@ -205,14 +205,15 @@ class lineMaker:
         #_haiku_style=[5,7,5]
         # d = DataGenerator(X, '', self.params,  batch_size=1)
         # [s,_,_,_, s1,s2,s3], _ = d.__getitem__(0)
-   
+        #print (haiku_style)
+        #print (type(haiku_style))
         s = np.array(padded_docs)
 
 
         state_values =  self.encoder_model.predict([s, np.array([haiku_style[0]]), np.array([haiku_style[1]]), np.array([haiku_style[2]])]) # stndard 5-7-5 haiku!
 
 
-        # print (state_values) # ensure there is some output....
+        #print (state_values) # ensure there is some output....
 
 
 
@@ -251,7 +252,7 @@ class lineMaker:
             #r = ([ts[0],ts[1],ts[2]] + state_values + [np.array([haiku_style[0]]), np.array([haiku_style[1]])  , np.array([haiku_style[2]])])
 
             i, ii, iii, h ,c = self.decoder_model.predict(r)
-            
+            #print (h ,c) 
 
             for j in range(3):
                 sampled_token_index = np.zeros((1,))
@@ -269,9 +270,10 @@ class lineMaker:
                     #sampled_token_index  = np.argmax(iii[0, -1, :])
                     sampled_token_index = _sample(iii[0, -1, :])
 
-                word = (self.params['reverse_target_char_index'][j][sampled_token_index]).split('/')[0]
+                #word = (self.params['reverse_target_char_index'][j][sampled_token_index]).split('/')[0]
+                word = (self.params['reverse_target_char_index'][j][sampled_token_index])
                 
-                if not max_syllabus[j] and word not in _haiku[j]:
+                if not max_syllabus[j]:  # and word not in _haiku[j]: don't care even if repeat!
                     _haiku[j].append(word)
                     syllabus_count[j] += get_syllables(word)
 
@@ -281,13 +283,16 @@ class lineMaker:
                 else:
 
                     if j == 0:
-                        ts[0, 0] = np.zeros((1,1))
+                        #ts[0, 0] = np.zeros((1,1))
+                        ts = np.zeros((1,1))
                         ts[0, 0] = sampled_token_index
                     elif j == 1:
-                        ts1[0, 0] = np.zeros((1,1))
+                        #ts1[0, 0] = np.zeros((1,1))
+                        ts1 = np.zeros((1,1))
                         ts1[0, 0] = sampled_token_index
                     elif j == 2:
-                        ts2[0, 0] = np.zeros((1,1))
+                        #ts2[0, 0] = np.zeros((1,1))
+                        ts2 = np.zeros((1,1))
                         ts2[0, 0] = sampled_token_index
                     '''
                     ts[j] = sampled_token_index

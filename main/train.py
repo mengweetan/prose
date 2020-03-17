@@ -233,8 +233,6 @@ class Machine:
 	    	'embedding_matrix':embedding_matrix,
             'target_embedding_matrix':target_embedding_matrix,
 
-                        #'latent_dim':latent_dim,
-                        #'num_syllabus':self.num_syllabus = len(syllabus)
             }
 
 
@@ -245,17 +243,19 @@ class Machine:
 
 
         latent_dim = self.params['embedding_matrix'].shape[1]
-        dropout=0.1 #regularization , to prevent over fitting
+        #dropout=0.1 #regularization , to prevent over fitting
         learning_rate = 0.0025
 
         import sys, os
         python_version = 2 if '2.' in sys.version.split('|')[0] else 3
 
-        if python_version == 2: optimizer = 'rmsprop'
-        else: optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
+        #if python_version == 2: optimizer = 'rmsprop'
+        #else: optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
         #else: optimizer =  tf.keras.optimizers.Adagrad()
-	    
-		
+        
+        
+        optimizer =  tf.keras.optimizers.RMSprop(learning_rate=learning_rate, rho=0.9)
+        optimizer= 'adam'
 
         # Model Architecture
 
@@ -304,7 +304,14 @@ class Machine:
                 last_states_cs.append(x_state_c)
 
 
-            outputs.append(Dense(self.params['num_decoder_tokens'][i], activation='softmax', name='predict{}'.format(i)) (x))
+            # add drop out??
+            Dropout = tf.keras.layers.Dropout
+            x = Dropout(0.2, input_shape=(self.params['num_decoder_tokens'][i],)) (x)
+            #x = Dense(30, activation='relu', name='predictd{}'.format(i)) (x)
+            outputs.append(Dense(self.params['num_decoder_tokens'][i], activation='sigmoid', name='predict{}'.format(i)) (x))
+
+            # before experiment
+            #outputs.append(Dense(self.params['num_decoder_tokens'][i], activation='softmax', name='predict{}'.format(i)) (x))
 
         #model = Model([inputs, tuple(np.array(aux_inputs).tolist()), tuple(np.array(syllabus_inputs).tolist())], [tuple(np.array(outputs).tolist())], name='machine')
         model = Model([inputs, aux_inputs[0],aux_inputs[1],aux_inputs[2], syllabus_inputs[0],syllabus_inputs[1],syllabus_inputs[2]], [outputs[0],outputs[1],outputs[2]], name='machine')
@@ -347,7 +354,7 @@ class Machine:
             """
             Returns a custom learning rate that decreases as epochs progress.
             """
-            learning_rate = 0.2
+            learning_rate = 0.05
             if epochs > 10:
                 learning_rate = 0.02
             if epochs > 20:
@@ -371,7 +378,7 @@ class Machine:
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         # model.summary()
 
-        history = model.fit(training_generator, validation_data=validation_generator,  epochs=epochs, callbacks=[mc,es,tfc,lrc] )
+        history = model.fit(training_generator, validation_data=validation_generator, shuffle=True, epochs=epochs, callbacks=[mc,es,lrc] )
         
         #history = model.fit_generator(training_generator, validation_data=validation_generator,  epochs=epochs, use_multiprocessing=True, callbacks=[mc,es,tfc,lrc])
 
@@ -431,6 +438,6 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=1)
+    h = haiku.train(epochs=2)
     haiku.plot(h)
     

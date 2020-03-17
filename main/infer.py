@@ -46,7 +46,7 @@ def getInferenceModels():
 
     '''
     load_model = tf.keras.models.load_model
-    model = load_model('model/haiku/modelv2-best.h5',custom_objects={'tf': tf}, compile=False)
+    model = load_model('model/haiku/modelv2-b.h5',custom_objects={'tf': tf}, compile=False)
     encoder_model = Model( [ model.inputs[0], model.inputs[4], model.inputs[5], model.inputs[6]], [model.layers[4].output[1],model.layers[4].output[2] ])
 
 
@@ -112,7 +112,13 @@ def getInferenceModels():
             last_states_hs.append(x_state_h)
             last_states_cs.append(x_state_c)
 
-        decoder_outputs2.append(Dense(haiku.params['num_decoder_tokens'][i], activation='softmax', name='predict{}'.format(i)) (x))
+        Dropout = tf.keras.layers.Dropout
+        x = Dropout(0.2, input_shape=(haiku.params['num_decoder_tokens'][i],)) (x)
+        decoder_outputs2.append(Dense(haiku.params['num_decoder_tokens'][i], activation='sigmoid', name='predict{}'.format(i)) (x))
+        # x = Dense(30, activation='relu', name='predictd{}'.format(i)) (x)
+        # decoder_outputs2.append(Dense(1, activation='sigmoid', name='predict{}'.format(i)) (x))
+
+        #decoder_outputs2.append(Dense(haiku.params['num_decoder_tokens'][i], activation='softmax', name='predict{}'.format(i)) (x))
 
 
     decoder_model = Model(
@@ -133,6 +139,9 @@ def getInferenceModels():
         encoder_model, decoder_model = getInferenceModels()
         lm = lineMaker( encoder_model, decoder_model, haiku.params )
         result = lm.imagine(SEED_PHRASE)
+
+        # API key: 5OEsg3kEBkhZE7LE
+        # Password: Well done!
 
         return (result)
 
