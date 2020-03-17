@@ -65,7 +65,7 @@ class Machine:
 
     def _setup(self):
 
-        self.df = self.df[:1000]
+        #self.df = self.df[:1000]
        
         print (self.df.info())
 
@@ -438,6 +438,6 @@ class Machine:
 
 if __name__ == "__main__":
     haiku = Machine()
-    h = haiku.train(epochs=2)
+    h = haiku.train(epochs=10)
     haiku.plot(h)
     
