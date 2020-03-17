@@ -112,13 +112,13 @@ class lineMaker:
         self.encoder_model = encoder_model
         self.decoder_model = decoder_model
         self.params = params
-        self.dataDir = 'data/'
+        self.dataDir = 'prose/data/'
 
 
 
     def imagine(self, seed, haiku_style=[5,7,5]):
 
-        from utils import get_syllables
+        from .utils import get_syllables
         from scipy import spatial
         embeddings_index = dict()
         if os.name == 'nt': f = open(self.dataDir+'glove.6B/glove.6B.50d.txt',  encoding='utf-8') # try 50 dimension
@@ -168,7 +168,7 @@ class lineMaker:
                 try:
                     _.append(_index[item])
                 except Exception as e:
-                    print (e)
+                    print ('not in my vocab?', e)
                     _.append(_index_from_vocab(item))
                     # routine here to get the nearest word from glove dict....
                     # _.append(_index['unknown'])  # for now....
@@ -189,7 +189,7 @@ class lineMaker:
 
         
 
-        def _sample(preds, temperature=0.9):
+        def _sample(preds, temperature=0.4):
 
             preds = np.asarray(preds).astype('float64')
             preds = np.log(preds) / temperature # 1 is temperature
@@ -278,8 +278,8 @@ class lineMaker:
                     syllabus_count[j] += get_syllables(word)
 
                 syllabus_limit = 7 if j==1 else 5
-                if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
-                #if word == '__end': max_syllabus[j] = True
+                #if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
+                if word == '__end': max_syllabus[j] = True
                 else:
 
                     if j == 0:
@@ -325,4 +325,4 @@ class lineMaker:
 
             state_values = [h, c]
 
-        return '\n'.join( [ ' '.join(_haiku[i]).replace('__end','') for i in range(3)])
+        return '\n'.join( [ ' '.join(_haiku[i]).replace('__end','').replace('start__','').replace('__unknown','') for i in range(3)])

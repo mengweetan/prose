@@ -19,16 +19,18 @@ Tokenizer = tf.keras.preprocessing.text.Tokenizer
 import numpy as np
 
 
-
-
-
-from  train import Machine
+from  .train import Machine
 haiku = Machine()
 embedding_matrix = haiku.params['embedding_matrix']
 latent_dim = embedding_matrix.shape[1]
 HAIKU_LINES_NUM = haiku.params['HAIKU_LINES_NUM']
 
+
+
+
 def getInferenceModels():
+
+
 
 
     '''
@@ -46,7 +48,7 @@ def getInferenceModels():
 
     '''
     load_model = tf.keras.models.load_model
-    model = load_model('model/haiku/modelv2-b.h5',custom_objects={'tf': tf}, compile=False)
+    model = load_model('prose/model/haiku/modelv2-b.h5',custom_objects={'tf': tf}, compile=False)
     encoder_model = Model( [ model.inputs[0], model.inputs[4], model.inputs[5], model.inputs[6]], [model.layers[4].output[1],model.layers[4].output[2] ])
 
 
@@ -126,25 +128,35 @@ def getInferenceModels():
         #[decoder_outputs2[0] , decoder_outputs2[1] , decoder_outputs2[2]] + [state_h2, state_c2])
         [tuple(np.array(decoder_outputs2).tolist())] + [x_state_h, x_state_c]) # the last identity of the last line
     #decoder_model.load_weights(self.data_dir+'model8_weights.h5')
-    decoder_model.summary()
+    #decoder_model.summary()
    
 
     return encoder_model, decoder_model
 
 
 
-    def work_on(seed):
-        from r import lineMaker
+class Haiku_writer:
+    def __init__(self, seed):
+        self.seed = seed
+        #self._write()
+
+    def write(self):
+
+        from .r import lineMaker
 
         encoder_model, decoder_model = getInferenceModels()
         lm = lineMaker( encoder_model, decoder_model, haiku.params )
-        result = lm.imagine(SEED_PHRASE)
-
+        result = lm.imagine(self.seed)
+        
+        print ('doing 2 times?')
         # API key: 5OEsg3kEBkhZE7LE
         # Password: Well done!
 
         return (result)
 
+#haiku_writer = Haiku_writer()
+
+'''
 if __name__ == "__main__":
 
     from train import SEED_PHRASE 
@@ -161,3 +173,4 @@ if __name__ == "__main__":
     result = lm.imagine(SEED_PHRASE)
 
     print (result)
+'''
