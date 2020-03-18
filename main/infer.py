@@ -19,8 +19,9 @@ Tokenizer = tf.keras.preprocessing.text.Tokenizer
 import numpy as np
 
 
-from  .train import Machine
-haiku = Machine()
+from  .machine import Machine
+#haiku = Machine(size=10000) # remember what is saved....
+haiku = Machine() 
 embedding_matrix = haiku.params['embedding_matrix']
 latent_dim = embedding_matrix.shape[1]
 HAIKU_LINES_NUM = haiku.params['HAIKU_LINES_NUM']
@@ -31,39 +32,16 @@ HAIKU_LINES_NUM = haiku.params['HAIKU_LINES_NUM']
 def getInferenceModels():
 
 
-
-
-    '''
-    num_encoder_tokens = 50000
-    num_decoder_tokens = 50000
-
-    inputs = Input(shape=(None,))
-    aux_inputs = [Input(shape=(haiku.params['max_encoder_seq_length'],), name='haikuLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
-    syllabus_inputs = [Input(shape=(1,),  dtype='int32', name='syllabus_input_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
-
-    x =  Embedding(num_encoder_tokens+1, latent_dim, mask_zero = True)(inputs)
-    _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
-
-    encoder_model = Model([inputs, syllabus_inputs[0],syllabus_inputs[1],syllabus_inputs[2]], [state_h, state_c])
-
-    '''
     load_model = tf.keras.models.load_model
-    model = load_model('prose/model/haiku/modelv2-b.h5',custom_objects={'tf': tf}, compile=False)
+    file_path = os.getcwd()+'/ml/'
+    model = load_model(file_path+'prose/model/haiku/{}_modelv2.h5'.format(haiku.size),custom_objects={'tf': tf}, compile=False)
+
+    #print ('models\' json')
+    #model.summary()
+    
     encoder_model = Model( [ model.inputs[0], model.inputs[4], model.inputs[5], model.inputs[6]], [model.layers[4].output[1],model.layers[4].output[2] ])
 
 
-
-    #decoder model
-
-    #inputs = Input(shape=(None,))
-    '''
-    inputs = Input(shape=(haiku.params['max_encoder_seq_length'], ), name='input_before_embed')
-    
-    x =  Embedding(haiku.params['num_encoder_tokens'], latent_dim, mask_zero = True)(inputs)
-    _ , state_h, state_c = LSTM(latent_dim,  return_state=True) (x)
-    '''
-
-    #aux_inputs = [Input(shape=(haiku.params['max_encoder_seq_length'],), name='haikuLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
     aux_inputs = [Input(shape=(1,), name='proseLine_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
     syllabus_inputs = [Input(shape=(1,),  dtype='int32', name='syllabus_input_{}'.format(i)) for i in range(HAIKU_LINES_NUM)]
 
@@ -138,7 +116,7 @@ def getInferenceModels():
 class Haiku_writer:
     def __init__(self, seed):
         self.seed = seed
-        #self._write()
+       
 
     def write(self):
 
@@ -148,7 +126,7 @@ class Haiku_writer:
         lm = lineMaker( encoder_model, decoder_model, haiku.params )
         result = lm.imagine(self.seed)
         
-        print ('doing 2 times?')
+    
         # API key: 5OEsg3kEBkhZE7LE
         # Password: Well done!
 

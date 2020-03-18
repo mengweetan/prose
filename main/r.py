@@ -112,7 +112,8 @@ class lineMaker:
         self.encoder_model = encoder_model
         self.decoder_model = decoder_model
         self.params = params
-        self.dataDir = 'prose/data/'
+        file_path = os.getcwd()+'/ml/'
+        self.dataDir = file_path+'prose/data/'
 
 
 
@@ -189,7 +190,7 @@ class lineMaker:
 
         
 
-        def _sample(preds, temperature=0.4):
+        def _sample(preds, temperature=0.8):
 
             preds = np.asarray(preds).astype('float64')
             preds = np.log(preds) / temperature # 1 is temperature
@@ -278,8 +279,8 @@ class lineMaker:
                     syllabus_count[j] += get_syllables(word)
 
                 syllabus_limit = 7 if j==1 else 5
-                #if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
-                if word == '__end': max_syllabus[j] = True
+                if syllabus_count[j] >= syllabus_limit or word == '__end': max_syllabus[j] = True
+                #if word == '__end': max_syllabus[j] = True
                 else:
 
                     if j == 0:
