@@ -131,24 +131,3 @@ class Haiku_writer:
         # Password: Well done!
 
         return (result)
-
-#haiku_writer = Haiku_writer()
-
-'''
-if __name__ == "__main__":
-
-    from train import SEED_PHRASE 
-    print (SEED_PHRASE)
-
-
-    from r import lineMaker
-    #seed ="long john silver"
- 
-
-
-    encoder_model, decoder_model = getInferenceModels()
-    lm = lineMaker( encoder_model, decoder_model, haiku.params )
-    result = lm.imagine(SEED_PHRASE)
-
-    print (result)
-'''
